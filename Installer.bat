@@ -81,18 +81,19 @@ set apps[49]=Chocolatey.Chocolatey
 set apps[50]=FVM
 set apps[51]=UltraVNC_1436
 set apps[52]=Microsoft.Sysinternals.SDelete
+set apps[53]=Microsoft.DesktopAppInstaller
 
 :menu
 cls
 echo -------------------------------
 echo  INSTALADOR DE APLICACIONES V.2.0
-echo  Winget Version 1.25.390.0
+echo  Winget instalador de aplicaciones
 echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
 :: Mostrar menu actualizado
-for /l %%i in (1,1,52) do (
+for /l %%i in (1,1,53) do (
     echo  %%i. !apps[%%i]!
 )
 echo  99. Borrado seguro de usuario
@@ -112,7 +113,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-52"
+    set "selected=1-53"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -182,6 +183,8 @@ for %%a in (%applications%) do (
         call :install_exe "https://descargas-xelerica.netlify.app/assets/downloads/UltraVNC_1436_X64_Setup.exe"
     ) else if "%%a"=="Microsoft.Sysinternals.SDelete" (
         "%wingetPath%" install --id Microsoft.Sysinternals.SDelete --accept-source-agreements --accept-package-agreements -h
+    ) else if "%%a"=="Microsoft.DesktopAppInstaller" (
+        call :install_winget_update
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -508,4 +511,29 @@ for /d %%d in ("C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*") d
 )
 
 :winget_found
+goto :eof
+
+:install_winget_update
+echo Actualizando Microsoft App Installer (Winget)...
+set "winget_url=https://aka.ms/getwinget"
+set "winget_file=%temp%\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+
+echo Descargando la ultima version de Winget...
+powershell -Command "Invoke-WebRequest -Uri '%winget_url%' -OutFile '%winget_file%'"
+if not exist "%winget_file%" (
+    echo ERROR: Fallo en la descarga de Winget
+    set /a error_count+=1
+    goto :eof
+)
+
+echo Instalando Winget actualizado...
+powershell -Command "Add-AppxPackage -Path '%winget_file%'"
+if !errorlevel! neq 0 (
+    echo ERROR en la instalacion de Winget
+    set /a error_count+=1
+) else (
+    echo Winget actualizado correctamente
+    echo [INFO] Reinicie la aplicacion para usar la nueva version de Winget
+)
+if exist "%winget_file%" del "%winget_file%"
 goto :eof
