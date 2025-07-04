@@ -66,7 +66,7 @@ set apps[34]=FusionInventory-Agent.exe
 set apps[35]=Amazon.WorkspacesClient
 set apps[36]=Adobe.Acrobat.Reader.64-bit
 set apps[37]=Microsoft.VisualStudio.2022.Community
-set apps[38]=DEVCOM.JMeter 5.6.3
+set apps[38]=DEVCOM.JMeter
 set apps[39]=jenkins.msi
 set apps[40]=MongoDB.Server
 set apps[41]=MongoDB.Shell
@@ -82,6 +82,7 @@ set apps[50]=FVM
 set apps[51]=UltraVNC_1436
 set apps[52]=Microsoft.Sysinternals.SDelete
 set apps[53]=Microsoft.DesktopAppInstaller
+set apps[54]=Instalar_Winget
 
 :menu
 cls
@@ -92,9 +93,20 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu actualizado
-for /l %%i in (1,1,53) do (
-    echo  %%i. !apps[%%i]!
+:: Mostrar menu en dos columnas (1-27 y 28-54)
+echo  COLUMNA 1                        COLUMNA 2
+echo  ---------                        ---------
+for /l %%i in (1,1,27) do (
+    set /a right_col=%%i+27
+    for %%j in (!right_col!) do (
+        set "left_app=%%i. !apps[%%i]!                                "
+        set "left_app=!left_app:~0,32!"
+        if %%j leq 54 (
+            call echo  !left_app!%%j. !apps[%%j]!
+        ) else (
+            echo  !left_app!
+        )
+    )
 )
 echo  99. Borrado seguro de usuario
 
@@ -113,7 +125,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-53"
+    set "selected=1-54"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -185,6 +197,8 @@ for %%a in (%applications%) do (
         "%wingetPath%" install --id Microsoft.Sysinternals.SDelete --accept-source-agreements --accept-package-agreements -h
     ) else if "%%a"=="Microsoft.DesktopAppInstaller" (
         call :install_winget_update
+    ) else if "%%a"=="Instalar_Winget" (
+        call :install_winget_only
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -534,6 +548,31 @@ if !errorlevel! neq 0 (
 ) else (
     echo Winget actualizado correctamente
     echo [INFO] Reinicie la aplicacion para usar la nueva version de Winget
+)
+if exist "%winget_file%" del "%winget_file%"
+goto :eof
+
+:install_winget_only
+echo Instalando Winget (App Installer)...
+set "winget_url=https://aka.ms/getwinget"
+set "winget_file=%temp%\Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
+
+echo Descargando instalador de Winget...
+powershell -Command "Invoke-WebRequest -Uri '%winget_url%' -OutFile '%winget_file%'"
+if not exist "%winget_file%" (
+    echo ERROR: Fallo en la descarga de Winget
+    set /a error_count+=1
+    goto :eof
+)
+
+echo Instalando Winget...
+powershell -Command "Add-AppxPackage -Path '%winget_file%'"
+if !errorlevel! neq 0 (
+    echo ERROR en la instalacion de Winget
+    set /a error_count+=1
+) else (
+    echo Winget instalado correctamente
+    echo [INFO] Reinicie la aplicacion para usar Winget.
 )
 if exist "%winget_file%" del "%winget_file%"
 goto :eof
