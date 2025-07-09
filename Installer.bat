@@ -84,6 +84,8 @@ set apps[52]=Microsoft.Sysinternals.SDelete
 set apps[53]=Microsoft.DesktopAppInstaller
 set apps[54]=Instalar_Winget
 set apps[55]=SaenzFety_Atera-SanDiego
+set apps[56]=SaenzFety_Atera-Access
+set apps[57]=SaenzFety_Atera-Comerciales_Externos
 
 :menu
 cls
@@ -94,22 +96,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-27 y 28-55)
+:: Mostrar menu en dos columnas (1-27 y 28-57)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,28) do (
+for /l %%i in (1,1,30) do (
     set /a right_col=%%i+27
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 27 (
-            if %%j leq 55 (
+            if %%j leq 57 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
-        ) else if %%i equ 28 (
-            if %%j leq 55 (
+        ) else if %%i gtr 27 (
+            if %%j leq 57 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -132,7 +134,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-55"
+    set "selected=1-57"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -208,6 +210,10 @@ for %%a in (%applications%) do (
         call :install_winget_only
     ) else if "%%a"=="SaenzFety_Atera-SanDiego" (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-sandiego.msi"
+    ) else if "%%a"=="SaenzFety_Atera-Access" (
+        call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-access.msi"
+    ) else if "%%a"=="SaenzFety_Atera-Comerciales_Externos" (
+        call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-Equipos_Externos.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
