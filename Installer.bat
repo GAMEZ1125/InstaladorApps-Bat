@@ -86,6 +86,7 @@ set apps[54]=Instalar_Winget
 set apps[55]=SaenzFety_Atera-SanDiego
 set apps[56]=SaenzFety_Atera-Access
 set apps[57]=SaenzFety_Atera-Comerciales_Externos
+set apps[58]=SaenzFety_Atera-CID
 
 :menu
 cls
@@ -96,22 +97,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-27 y 28-57)
+:: Mostrar menu en dos columnas (1-27 y 28-58)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,30) do (
+for /l %%i in (1,1,31) do (
     set /a right_col=%%i+27
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 27 (
-            if %%j leq 57 (
+            if %%j leq 58 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 27 (
-            if %%j leq 57 (
+            if %%j leq 58 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -134,7 +135,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-57"
+    set "selected=1-58"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -214,6 +215,8 @@ for %%a in (%applications%) do (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-access.msi"
     ) else if "%%a"=="SaenzFety_Atera-Comerciales_Externos" (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-Equipos_Externos.msi"
+    ) else if "%%a"=="SaenzFety_Atera-CID" (
+        call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-CID.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
