@@ -83,6 +83,7 @@ set apps[51]=UltraVNC_1436
 set apps[52]=Microsoft.Sysinternals.SDelete
 set apps[53]=Microsoft.DesktopAppInstaller
 set apps[54]=Instalar_Winget
+set apps[55]=SaenzFety_Atera-SanDiego
 
 :menu
 cls
@@ -93,18 +94,24 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-27 y 28-54)
+:: Mostrar menu en dos columnas (1-27 y 28-55)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,27) do (
+for /l %%i in (1,1,28) do (
     set /a right_col=%%i+27
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
-        if %%j leq 54 (
-            call echo  !left_app!%%j. !apps[%%j]!
-        ) else (
-            echo  !left_app!
+        if %%i leq 27 (
+            if %%j leq 55 (
+                call echo  !left_app!%%j. !apps[%%j]!
+            ) else (
+                echo  !left_app!
+            )
+        ) else if %%i equ 28 (
+            if %%j leq 55 (
+                echo                                 %%j. !apps[%%j]!
+            )
         )
     )
 )
@@ -125,7 +132,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-54"
+    set "selected=1-55"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -199,6 +206,8 @@ for %%a in (%applications%) do (
         call :install_winget_update
     ) else if "%%a"=="Instalar_Winget" (
         call :install_winget_only
+    ) else if "%%a"=="SaenzFety_Atera-SanDiego" (
+        call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-sandiego.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
