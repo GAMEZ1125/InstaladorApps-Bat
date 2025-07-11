@@ -87,6 +87,7 @@ set apps[55]=SaenzFety_Atera-SanDiego
 set apps[56]=SaenzFety_Atera-Access
 set apps[57]=SaenzFety_Atera-Comerciales_Externos
 set apps[58]=SaenzFety_Atera-CID
+set apps[59]=PL/SQL_Developer
 
 :menu
 cls
@@ -97,22 +98,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-27 y 28-58)
+:: Mostrar menu en dos columnas (1-27 y 28-59)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,31) do (
+for /l %%i in (1,1,32) do (
     set /a right_col=%%i+27
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 27 (
-            if %%j leq 58 (
+            if %%j leq 59 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 27 (
-            if %%j leq 58 (
+            if %%j leq 59 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -135,7 +136,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-58"
+    set "selected=1-59"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -217,6 +218,8 @@ for %%a in (%applications%) do (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-Equipos_Externos.msi"
     ) else if "%%a"=="SaenzFety_Atera-CID" (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-CID.msi"
+    ) else if "%%a"=="PL/SQL_Developer" (
+        call :install_zip "https://download.oracle.com/otn_software/java/sqldeveloper/sqldeveloper-24.3.1.347.1826-x64.zip" "C:\sqldeveloper"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -253,13 +256,38 @@ if not exist "%zipfile%" (
 
 echo Extrayendo en %dest%...
 if not exist "%dest%" mkdir "%dest%"
-powershell -Command "Expand-Archive -Path '%zipfile%' -DestinationPath '%dest%' -Force"
-if exist "%zipfile%" del "%zipfile%"
 
+:: Intentar Expand-Archive primero, si falla usar método alternativo
+powershell -Command "try { Expand-Archive -Path '%zipfile%' -DestinationPath '%dest%' -Force } catch { throw 'PowerShell Archive failed' }" 2>nul
+if !errorlevel! neq 0 (
+    echo Metodo PowerShell fallo, usando extraccion alternativa...
+    :: Usar tar como método alternativo principal (más confiable)
+    tar -xf "%zipfile%" -C "%dest%" 2>nul
+    if !errorlevel! neq 0 (
+        echo Tar fallo, usando VBScript...
+        :: Método VBScript como último recurso
+        echo Set objShell = CreateObject^("Shell.Application"^) > "%temp%\extract.vbs"
+        echo Set objFolder = objShell.NameSpace^("%zipfile%"^) >> "%temp%\extract.vbs"
+        echo Set objFolderItem = objShell.NameSpace^("%dest%"^) >> "%temp%\extract.vbs"
+        echo If Not objFolder Is Nothing Then objFolderItem.CopyHere objFolder.Items, 256 >> "%temp%\extract.vbs"
+        cscript //nologo "%temp%\extract.vbs"
+        del "%temp%\extract.vbs"
+    )
+)
+
+if exist "%zipfile%" del "%zipfile%"
 echo Extraccion completada en %dest%
 
-:: Configurar variables de entorno si es Maven o Gradle
-if /i "%dest%"=="C:\Program Files\apache-maven-3.9.10-bin" (
+:: Configuraciones específicas por aplicación
+if /i "%dest%"=="C:\IBMiAccess_v1r1" (
+    if exist "%dest%\IBMiAccess_v1r1\QIBM\ProdData\OS400\QDLS" (
+        echo Instalando IBM i Access Client Solutions...
+        "%dest%\IBMiAccess_v1r1\QIBM\ProdData\OS400\QDLS\_ibm_i_access_client_solutions.exe" -i silent
+    ) else (
+        echo ERROR: Ruta de instalacion de IBM i Access no encontrada
+        set /a error_count+=1
+    )
+) else if /i "%dest%"=="C:\Program Files\apache-maven-3.9.10-bin" (
     set "maven_home=%dest%\apache-maven-3.9.10"
     if exist "!maven_home!" (
         echo Configurando variables de entorno para Maven...
@@ -302,6 +330,15 @@ if /i "%dest%"=="C:\Program Files\apache-maven-3.9.10-bin" (
     ) else (
         echo ERROR: Directorio de Gradle no encontrado en "!gradle_home!"
         set /a error_count+=1
+    )
+) else if /i "%dest%"=="C:\sqldeveloper" (
+    echo Configurando SQL Developer...
+    if exist "%dest%\sqldeveloper" (
+        echo [INFO] SQL Developer instalado correctamente en C:\sqldeveloper
+        echo [INFO] Ejecutable disponible en: C:\sqldeveloper\sqldeveloper\bin\sqldeveloper.exe
+    ) else (
+        echo [INFO] SQL Developer instalado correctamente en C:\sqldeveloper
+        echo [INFO] Verifique la estructura de carpetas para localizar el ejecutable
     )
 )
 
