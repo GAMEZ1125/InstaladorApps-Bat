@@ -88,6 +88,7 @@ set apps[56]=SaenzFety_Atera-Access
 set apps[57]=SaenzFety_Atera-Comerciales_Externos
 set apps[58]=SaenzFety_Atera-CID
 set apps[59]=PL/SQL_Developer
+set apps[60]=Cisco_Secure_Client_v5.1.2.42
 
 :menu
 cls
@@ -98,22 +99,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-27 y 28-59)
+:: Mostrar menu en dos columnas (1-27 y 28-60)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,32) do (
+for /l %%i in (1,1,33) do (
     set /a right_col=%%i+27
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 27 (
-            if %%j leq 59 (
+            if %%j leq 60 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 27 (
-            if %%j leq 59 (
+            if %%j leq 60 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -136,7 +137,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-59"
+    set "selected=1-60"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -220,6 +221,8 @@ for %%a in (%applications%) do (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/atera-CID.msi"
     ) else if "%%a"=="PL/SQL_Developer" (
         call :install_zip "https://download.oracle.com/otn_software/java/sqldeveloper/sqldeveloper-24.3.1.347.1826-x64.zip" "C:\sqldeveloper"
+    ) else if "%%a"=="Cisco_Secure_Client_v5.1.2.42" (
+        call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/cisco-secure-client-win-5.1.2.42.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
