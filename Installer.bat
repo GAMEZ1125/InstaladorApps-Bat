@@ -99,21 +99,21 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-27 y 28-60)
+:: Mostrar menu en dos columnas (1-30 y 31-60)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,33) do (
-    set /a right_col=%%i+27
+    set /a right_col=%%i+30
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
-        if %%i leq 27 (
+        if %%i leq 30 (
             if %%j leq 60 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
-        ) else if %%i gtr 27 (
+        ) else if %%i gtr 30 (
             if %%j leq 60 (
                 echo                                 %%j. !apps[%%j]!
             )
