@@ -89,6 +89,7 @@ set apps[57]=SaenzFety_Atera-Comerciales_Externos
 set apps[58]=SaenzFety_Atera-CID
 set apps[59]=PL/SQL_Developer
 set apps[60]=Cisco_Secure_Client_v5.1.2.42
+set apps[61]=Gradle-8.14.3.zip
 
 :menu
 cls
@@ -99,22 +100,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-30 y 31-60)
+:: Mostrar menu en dos columnas (1-30 y 31-61)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,33) do (
+for /l %%i in (1,1,34) do (
     set /a right_col=%%i+30
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 30 (
-            if %%j leq 60 (
+            if %%j leq 61 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 30 (
-            if %%j leq 60 (
+            if %%j leq 61 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -137,7 +138,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-60"
+    set "selected=1-61"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -223,6 +224,8 @@ for %%a in (%applications%) do (
         call :install_zip "https://download.oracle.com/otn_software/java/sqldeveloper/sqldeveloper-24.3.1.347.1826-x64.zip" "C:\sqldeveloper"
     ) else if "%%a"=="Cisco_Secure_Client_v5.1.2.42" (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/cisco-secure-client-win-5.1.2.42.msi"
+    ) else if "%%a"=="Gradle-8.14.3.zip" (
+        call :install_zip "https://services.gradle.org/distributions/gradle-8.14.3-all.zip" "C:\Program Files\gradle-8.14.3"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -342,6 +345,17 @@ if /i "%dest%"=="C:\IBMiAccess_v1r1" (
     ) else (
         echo [INFO] SQL Developer instalado correctamente en C:\sqldeveloper
         echo [INFO] Verifique la estructura de carpetas para localizar el ejecutable
+    )
+) else if /i "%dest%"=="C:\Program Files\gradle-8.14.3" (
+    set "gradle_home=%dest%\gradle-8.14.3"
+    if exist "!gradle_home!" (
+        echo Configurando variables de entorno para Gradle 8.14.3...
+        powershell -Command "[Environment]::SetEnvironmentVariable('GRADLE_HOME', '!gradle_home!', 'Machine')"
+        powershell -Command "$env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';!gradle_home!\bin'; [Environment]::SetEnvironmentVariable('Path', $env:Path, 'Machine')"
+        echo [INFO] Variables GRADLE_HOME y PATH actualizadas. Reinicie la consola para aplicar cambios.
+    ) else (
+        echo ERROR: Directorio de Gradle no encontrado en "!gradle_home!"
+        set /a error_count+=1
     )
 )
 
