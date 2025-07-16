@@ -123,6 +123,7 @@ for /l %%i in (1,1,35) do (
     )
 )
 echo  99. Borrado seguro de usuario
+echo  98. Temp_SQLDeveloper
 
 echo.
 echo Ingrese numeros separados por comas (ej: 2,5,7-10)
@@ -132,6 +133,12 @@ set /p "selection=Seleccion: "
 
 if /i "%selection%" == "99" (
     call :secure_delete
+    pause
+    goto menu
+)
+
+if /i "%selection%" == "98" (
+    call :clean_sqldeveloper
     pause
     goto menu
 )
@@ -699,4 +706,132 @@ if !errorlevel! neq 0 (
     echo [INFO] Reinicie la aplicacion para usar Winget.
 )
 if exist "%winget_file%" del "%winget_file%"
+goto :eof
+
+:clean_sqldeveloper
+setlocal enabledelayedexpansion
+
+echo.
+echo ===============================================
+echo   LIMPIEZA DE CARPETAS TEMPORALES SQL DEVELOPER
+echo ===============================================
+echo.
+
+:: Obtener lista de usuarios
+echo Usuarios disponibles en el sistema:
+echo -----------------------------------
+set "user_count=0"
+set "user_list="
+
+for /d %%u in ("C:\Users\*") do (
+    set "username=%%~nu"
+    :: Excluir carpetas del sistema
+    if /i not "!username!"=="Public" (
+        if /i not "!username!"=="Default" (
+            if /i not "!username!"=="All Users" (
+                if /i not "!username!"=="Default User" (
+                    set /a user_count+=1
+                    set "user_!user_count!=!username!"
+                    set "user_list=!user_list! !user_count!"
+                    echo  !user_count!. !username!
+                )
+            )
+        )
+    )
+)
+
+if %user_count% equ 0 (
+    echo No se encontraron usuarios en el sistema.
+    goto :eof
+)
+
+echo.
+set /p "user_selection=Seleccione el numero del usuario (1-%user_count%): "
+
+:: Validar selección
+set "selected_user="
+for %%i in (%user_list%) do (
+    if "%user_selection%"=="%%i" (
+        call set "selected_user=%%user_%%i%%"
+    )
+)
+
+if not defined selected_user (
+    echo ERROR: Seleccion invalida.
+    goto :eof
+)
+
+echo.
+echo Usuario seleccionado: %selected_user%
+echo.
+
+:: Verificar y eliminar carpetas de SQL Developer
+set "user_profile=C:\Users\%selected_user%"
+set "folders_found=0"
+set "folders_deleted=0"
+
+echo Buscando carpetas de SQL Developer para el usuario: %selected_user%
+echo.
+
+:: Carpeta 1: SQL Developer (con espacio)
+set "folder1=%user_profile%\AppData\Roaming\SQL Developer"
+if exist "!folder1!" (
+    set /a folders_found+=1
+    echo [ENCONTRADA] "!folder1!"
+    echo Eliminando carpeta "SQL Developer"...
+    rmdir /s /q "!folder1!" 2>nul
+    if not exist "!folder1!" (
+        echo [EXITOSO] Carpeta "SQL Developer" eliminada correctamente
+        set /a folders_deleted+=1
+    ) else (
+        echo [ERROR] No se pudo eliminar la carpeta "SQL Developer"
+    )
+    echo.
+) else (
+    echo [NO ENCONTRADA] "!folder1!"
+)
+
+:: Carpeta 2: sqldeveloper (sin espacio)
+set "folder2=%user_profile%\AppData\Roaming\sqldeveloper"
+if exist "!folder2!" (
+    set /a folders_found+=1
+    echo [ENCONTRADA] "!folder2!"
+    echo Eliminando carpeta "sqldeveloper"...
+    rmdir /s /q "!folder2!" 2>nul
+    if not exist "!folder2!" (
+        echo [EXITOSO] Carpeta "sqldeveloper" eliminada correctamente
+        set /a folders_deleted+=1
+    ) else (
+        echo [ERROR] No se pudo eliminar la carpeta "sqldeveloper"
+    )
+    echo.
+) else (
+    echo [NO ENCONTRADA] "!folder2!"
+)
+
+:: Resumen final
+echo ===============================================
+echo                   RESUMEN
+echo ===============================================
+echo Usuario procesado: %selected_user%
+echo Carpetas encontradas: %folders_found%
+echo Carpetas eliminadas: %folders_deleted%
+echo Fecha y hora: %DATE% %TIME%
+echo Equipo: %COMPUTERNAME%
+echo Ejecutado por: %USERNAME%
+echo ===============================================
+
+if %folders_found% equ 0 (
+    echo.
+    echo No se encontraron carpetas de SQL Developer para este usuario.
+) else if %folders_deleted% equ %folders_found% (
+    echo.
+    echo LIMPIEZA COMPLETADA: Todas las carpetas fueron eliminadas exitosamente.
+) else (
+    echo.
+    echo ATENCION: Algunas carpetas no pudieron ser eliminadas.
+    echo Verifique que SQL Developer este cerrado e intente nuevamente.
+)
+
+endlocal
 goto :eof
