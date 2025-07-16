@@ -60,7 +60,7 @@ set apps[28]=Microsoft.DotNet.Framework.DeveloperPack_4
 set apps[29]=Eraser.Eraser
 set apps[30]=Fortinet.FortiClientVPN
 set apps[31]=IBMiAccess_v1r1.zip
-set apps[32]=apache-maven-3.9.10-bin.zip
+set apps[32]=apache-maven-3.9.11-bin.zip
 set apps[33]=Gradle-8.13.zip
 set apps[34]=FusionInventory-Agent.exe
 set apps[35]=Amazon.WorkspacesClient
@@ -183,8 +183,8 @@ for %%a in (%applications%) do (
     
     if "%%a"=="IBMiAccess_v1r1.zip" (
         call :install_zip "https://www.nicklitten.com/wp-content/uploads/IBMiAccess_v1r1.zip" "C:\IBMiAccess_v1r1"
-    ) else if "%%a"=="apache-maven-3.9.10-bin.zip" (
-        call :install_zip "https://dlcdn.apache.org/maven/maven-3/3.9.10/binaries/apache-maven-3.9.10-bin.zip" "C:\Program Files\apache-maven-3.9.10-bin"
+    ) else if "%%a"=="apache-maven-3.9.11-bin.zip" (
+        call :install_zip "https://dlcdn.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.zip" "C:\Program Files\apache-maven-3.9.11-bin"
     ) else if "%%a"=="Gradle-8.13.zip" (
         call :install_zip "https://services.gradle.org/distributions/gradle-8.13-bin.zip" "C:\Program Files\gradle-8.13"
     ) else if "%%a"=="Gradle-8.5.zip" (
@@ -296,8 +296,8 @@ if /i "%dest%"=="C:\IBMiAccess_v1r1" (
         echo ERROR: Ruta de instalacion de IBM i Access no encontrada
         set /a error_count+=1
     )
-) else if /i "%dest%"=="C:\Program Files\apache-maven-3.9.10-bin" (
-    set "maven_home=%dest%\apache-maven-3.9.10"
+) else if /i "%dest%"=="C:\Program Files\apache-maven-3.9.11-bin" (
+    set "maven_home=%dest%\apache-maven-3.9.11"
     if exist "!maven_home!" (
         echo Configurando variables de entorno para Maven...
         powershell -Command "[Environment]::SetEnvironmentVariable('MAVEN_HOME', '!maven_home!', 'Machine')"
