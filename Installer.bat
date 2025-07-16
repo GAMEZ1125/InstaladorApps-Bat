@@ -90,6 +90,7 @@ set apps[58]=SaenzFety_Atera-CID
 set apps[59]=PL/SQL_Developer
 set apps[60]=Cisco_Secure_Client_v5.1.2.42
 set apps[61]=Gradle-8.14.3.zip
+set apps[62]=MongoDB-Compass
 
 :menu
 cls
@@ -100,22 +101,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-30 y 31-61)
+:: Mostrar menu en dos columnas (1-30 y 31-62)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,34) do (
+for /l %%i in (1,1,35) do (
     set /a right_col=%%i+30
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 30 (
-            if %%j leq 61 (
+            if %%j leq 62 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 30 (
-            if %%j leq 61 (
+            if %%j leq 62 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -138,7 +139,7 @@ if /i "%selection%" == "99" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-61"
+    set "selected=1-62"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -226,6 +227,8 @@ for %%a in (%applications%) do (
         call :install_msi "https://descargas-xelerica.netlify.app/assets/downloads/cisco-secure-client-win-5.1.2.42.msi"
     ) else if "%%a"=="Gradle-8.14.3.zip" (
         call :install_zip "https://services.gradle.org/distributions/gradle-8.14.3-all.zip" "C:\Program Files\gradle-8.14.3"
+    ) else if "%%a"=="MongoDB-Compass" (
+        call :install_exe "https://dw.uptodown.net/dwn/RvVkii134Riphftvun7hQBZyU0aCwJjJMFI3FD3XyiRi0C7C1tKU5X0Pf15N_2JMoxSAFNFbUkqB5n99hv--lniGF9thVLBxuJXkeuUCMmaE0HWFlt_kpQaypgkqkrxM/MqtJ-IhY5h-7rmxHLgdKTffsbsEbJSnfF18NzrCeMZWLnLoEx64VYXBcsZLEzuhY0n7dPloJ2oYLKpWKSHSyWNQKkCV_Qc_xzsZ9rzLZ__astxn6sY5NT4yzjnUfEejW/jx6cW_oauyrVt72wYVkDJ53rbfa0JdRC1XV9lAs6rvscToJi9CkXdhtO1skSss_2u6l11_s8tarAhYa0kzmPUzKpX87HGpgoBNSTOn4drgw=/mongodb-compass-1-46-5.exe"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -288,7 +291,7 @@ echo Extraccion completada en %dest%
 if /i "%dest%"=="C:\IBMiAccess_v1r1" (
     if exist "%dest%\IBMiAccess_v1r1\QIBM\ProdData\OS400\QDLS" (
         echo Instalando IBM i Access Client Solutions...
-        "%dest%\IBMiAccess_v1r1\QIBM\ProdData\OS400\QDLS\_ibm_i_access_client_solutions.exe" -i silent
+        "%dest%\IBMiAccess_v1\QIBM\ProdData\OS400\QDLS\_ibm_i_access_client_solutions.exe" -i silent
     ) else (
         echo ERROR: Ruta de instalacion de IBM i Access no encontrada
         set /a error_count+=1
@@ -373,14 +376,63 @@ if not exist "%exe_file%" (
     goto :eof
 )
 
-echo Ejecutando instalacion silenciosa...
-start /wait "" "%exe_file%" /SILENT /NORESTART
-if !errorlevel! neq 0 (
-    echo ERROR en la instalacion
+echo Verificando archivo descargado...
+for %%F in ("%exe_file%") do set file_size=%%~zF
+if %file_size% LSS 1000000 (
+    echo ERROR: Archivo descargado incompleto ^(tamaño: %file_size% bytes^)
     set /a error_count+=1
-) else (
-    echo Instalacion completada
+    if exist "%exe_file%" del "%exe_file%"
+    goto :eof
 )
+
+echo Ejecutando instalacion silenciosa...
+:: Parámetros específicos para cada aplicación
+if /i "%~nx1"=="mongodb-compass-1-46-5.exe" (
+    echo Usando parametros silenciosos para MongoDB Compass: /S
+    start /wait "" "%exe_file%" /S
+    set install_exit_code=!errorlevel!
+) else if /i "%~nx1"=="UltraVNC_1436_X64_Setup.exe" (
+    echo Usando parametros silenciosos para UltraVNC: /SILENT
+    start /wait "" "%exe_file%" /SILENT /NORESTART
+    set install_exit_code=!errorlevel!
+) else if /i "%~nx1"=="fusioninventory-agent_windows-x64_2.6.exe" (
+    echo Usando parametros silenciosos para FusionInventory: /S
+    start /wait "" "%exe_file%" /S
+    set install_exit_code=!errorlevel!
+) else (
+    echo Usando parametros silenciosos genericos: /SILENT /NORESTART
+    start /wait "" "%exe_file%" /SILENT /NORESTART
+    set install_exit_code=!errorlevel!
+)
+
+if !install_exit_code! neq 0 (
+    echo ERROR en la instalacion ^(codigo de salida: !install_exit_code!^)
+    echo Intentando instalacion con parametros alternativos...
+    
+    :: Intentar con parámetros alternativos para MongoDB Compass
+    if /i "%~nx1"=="mongodb-compass-1-46-5.exe" (
+        echo Probando con /VERYSILENT /NORESTART...
+        start /wait "" "%exe_file%" /VERYSILENT /NORESTART
+        set install_exit_code=!errorlevel!
+        
+        if !install_exit_code! neq 0 (
+            echo Probando con /SILENT...
+            start /wait "" "%exe_file%" /SILENT
+            set install_exit_code=!errorlevel!
+        )
+    )
+    
+    if !install_exit_code! neq 0 (
+        echo ERROR: Instalacion fallo con todos los parametros intentados
+        echo Codigo de salida final: !install_exit_code!
+        set /a error_count+=1
+    ) else (
+        echo Instalacion completada con parametros alternativos
+    )
+) else (
+    echo Instalacion completada correctamente
+)
+
 if exist "%exe_file%" del "%exe_file%"
 goto :eof
 
