@@ -92,6 +92,7 @@ set apps[60]=Cisco_Secure_Client_v5.1.2.42
 set apps[61]=Gradle-8.14.3.zip
 set apps[62]=MongoDB-Compass
 set apps[63]=npm_appium
+set apps[64]=Gestion_Hosts
 
 :menu
 cls
@@ -102,22 +103,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-30 y 31-63)
+:: Mostrar menu en dos columnas (1-32 y 33-64)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,36) do (
-    set /a right_col=%%i+30
+    set /a right_col=%%i+32
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
-        if %%i leq 30 (
-            if %%j leq 63 (
+        if %%i leq 32 (
+            if %%j leq 64 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
-        ) else if %%i gtr 30 (
-            if %%j leq 63 (
+        ) else if %%i gtr 32 (
+            if %%j leq 64 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -147,7 +148,7 @@ if /i "%selection%" == "98" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-63"
+    set "selected=1-64"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -239,6 +240,8 @@ for %%a in (%applications%) do (
         call :install_exe "https://dw.uptodown.net/dwn/RvVkii134Riphftvun7hQBZyU0aCwJjJMFI3FD3XyiRi0C7C1tKU5X0Pf15N_2JMoxSAFNFbUkqB5n99hv--lniGF9thVLBxuJXkeuUCMmaE0HWFlt_kpQaypgkqkrxM/MqtJ-IhY5h-7rmxHLgdKTffsbsEbJSnfF18NzrCeMZWLnLoEx64VYXBcsZLEzuhY0n7dPloJ2oYLKpWKSHSyWNQKkCV_Qc_xzsZ9rzLZ__astxn6sY5NT4yzjnUfEejW/jx6cW_oauyrVt72wYVkDJ53rbfa0JdRC1XV9lAs6rvscToJi9CkXdhtO1skSss_2u6l11_s8tarAhYa0kzmPUzKpX87HGpgoBNSTOn4drgw=/mongodb-compass-1-46-5.exe"
     ) else if "%%a"=="npm_appium" (
         call :install_npm_appium
+    ) else if "%%a"=="Gestion_Hosts" (
+        call :gestion_hosts
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1085,4 +1088,41 @@ echo ===============================================
 endlocal
 goto :eof
 
-:: Continúa con otras funciones...
+:gestion_hosts
+setlocal enabledelayedexpansion
+
+echo.
+echo ===============================================
+echo        GESTION DE ARCHIVO HOSTS DE WINDOWS
+echo ===============================================
+echo.
+
+echo [INFO] Mostrando contenido actual de hosts:
+type "%WINDIR%\System32\Drivers\Etc\hosts"
+echo.
+
+set /p "add_entry=¿Desea agregar una nueva entrada? [S/N]: "
+if /i "!add_entry!"=="S" (
+    echo.
+    set /p "ip=Ingrese la IP: "
+    set /p "dominio=Ingrese el dominio: "
+    echo.
+    echo Nueva entrada: !ip! !dominio!
+    set /p "confirm=¿Confirmar y agregar al archivo hosts? [S/N]: "
+    if /i "!confirm!"=="S" (
+        echo !ip! !dominio! >> "%WINDIR%\System32\Drivers\Etc\hosts"
+        echo [EXITOSO] Entrada agregada al archivo hosts.
+    ) else (
+        echo [INFO] Operacion cancelada por el usuario.
+    )
+) else (
+    echo [INFO] No se agregaron nuevas entradas.
+)
+
+echo.
+echo ===============================================
+echo         FIN DE GESTION DE ARCHIVO HOSTS
+echo ===============================================
+
+endlocal
+goto :eof
