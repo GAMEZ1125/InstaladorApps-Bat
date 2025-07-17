@@ -91,6 +91,7 @@ set apps[59]=PL/SQL_Developer
 set apps[60]=Cisco_Secure_Client_v5.1.2.42
 set apps[61]=Gradle-8.14.3.zip
 set apps[62]=MongoDB-Compass
+set apps[63]=npm_appium
 
 :menu
 cls
@@ -101,22 +102,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-30 y 31-62)
+:: Mostrar menu en dos columnas (1-30 y 31-63)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,35) do (
+for /l %%i in (1,1,36) do (
     set /a right_col=%%i+30
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 30 (
-            if %%j leq 62 (
+            if %%j leq 63 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 30 (
-            if %%j leq 62 (
+            if %%j leq 63 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -146,7 +147,7 @@ if /i "%selection%" == "98" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-62"
+    set "selected=1-63"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -236,6 +237,8 @@ for %%a in (%applications%) do (
         call :install_zip "https://services.gradle.org/distributions/gradle-8.14.3-all.zip" "C:\Program Files\gradle-8.14.3"
     ) else if "%%a"=="MongoDB-Compass" (
         call :install_exe "https://dw.uptodown.net/dwn/RvVkii134Riphftvun7hQBZyU0aCwJjJMFI3FD3XyiRi0C7C1tKU5X0Pf15N_2JMoxSAFNFbUkqB5n99hv--lniGF9thVLBxuJXkeuUCMmaE0HWFlt_kpQaypgkqkrxM/MqtJ-IhY5h-7rmxHLgdKTffsbsEbJSnfF18NzrCeMZWLnLoEx64VYXBcsZLEzuhY0n7dPloJ2oYLKpWKSHSyWNQKkCV_Qc_xzsZ9rzLZ__astxn6sY5NT4yzjnUfEejW/jx6cW_oauyrVt72wYVkDJ53rbfa0JdRC1XV9lAs6rvscToJi9CkXdhtO1skSss_2u6l11_s8tarAhYa0kzmPUzKpX87HGpgoBNSTOn4drgw=/mongodb-compass-1-46-5.exe"
+    ) else if "%%a"=="npm_appium" (
+        call :install_npm_appium
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -256,7 +259,8 @@ if %error_count% gtr 0 echo Verifique los errores e intente instalar manualmente
 pause
 exit /b
 
-:: Funciones de instalacion
+:: ======== TODAS LAS FUNCIONES DEBEN IR AQUÍ ========
+
 :install_zip
 set url=%~1
 set dest=%~2
@@ -835,3 +839,250 @@ if %folders_found% equ 0 (
 
 endlocal
 goto :eof
+
+:install_npm_appium
+setlocal enabledelayedexpansion
+
+echo.
+echo ===============================================
+echo   INSTALACION DE NPM APPIUM
+echo ===============================================
+echo.
+
+:: Verificar que Node.js esté instalado
+where node >nul 2>&1
+if !errorlevel! neq 0 (
+    echo ERROR: Node.js no esta instalado en el sistema.
+    echo Por favor, instale Node.js primero ^(aplicacion 6: OpenJS.NodeJS^).
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+:: Verificar que npm esté disponible
+where npm >nul 2>&1
+if !errorlevel! neq 0 (
+    echo ERROR: NPM no esta disponible en el sistema.
+    echo Verifique que Node.js este correctamente instalado.
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+:: Obtener lista de usuarios
+echo Usuarios disponibles en el sistema:
+echo -----------------------------------
+set "user_count=0"
+
+for /d %%u in ("C:\Users\*") do (
+    set "username=%%~nu"
+    if /i not "!username!"=="Public" (
+        if /i not "!username!"=="Default" (
+            if /i not "!username!"=="All Users" (
+                if /i not "!username!"=="Default User" (
+                    set /a user_count+=1
+                    set "user_!user_count!=!username!"
+                    echo  !user_count!. !username!
+                )
+            )
+        )
+    )
+)
+
+if !user_count! equ 0 (
+    echo No se encontraron usuarios en el sistema.
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+echo.
+set /p "user_selection=Seleccione el numero del usuario (1-!user_count!): "
+
+:: Validar selección usando método directo
+set "selected_user="
+if "!user_selection!"=="1" set "selected_user=!user_1!"
+if "!user_selection!"=="2" set "selected_user=!user_2!"
+if "!user_selection!"=="3" set "selected_user=!user_3!"
+if "!user_selection!"=="4" set "selected_user=!user_4!"
+if "!user_selection!"=="5" set "selected_user=!user_5!"
+
+if not defined selected_user (
+    echo ERROR: Seleccion invalida.
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+echo.
+echo Usuario seleccionado: !selected_user!
+echo.
+
+:: Definir rutas
+set "user_profile=C:\Users\!selected_user!"
+set "npm_folder=!user_profile!\AppData\Roaming\npm"
+
+:: Crear carpeta npm si no existe
+if not exist "!npm_folder!" (
+    echo Creando carpeta npm en: !npm_folder!
+    mkdir "!npm_folder!" 2>nul
+    if not exist "!npm_folder!" (
+        echo ERROR: No se pudo crear la carpeta npm
+        set /a error_count+=1
+        endlocal
+        goto :eof
+    )
+    echo [EXITOSO] Carpeta npm creada correctamente
+) else (
+    echo [INFO] La carpeta npm ya existe en: !npm_folder!
+)
+
+:: Preguntar sobre ExecutionPolicy
+echo.
+echo ===============================================
+echo   CONFIGURACION DE EXECUTION POLICY
+echo ===============================================
+echo.
+echo Para evitar problemas con la instalacion de Appium,
+echo se recomienda configurar la ExecutionPolicy a RemoteSigned.
+echo.
+choice /C SN /N /M "Desea ejecutar Set-ExecutionPolicy RemoteSigned? [S]i [N]o: "
+if !errorlevel! equ 1 (
+    echo.
+    echo Configurando ExecutionPolicy a RemoteSigned...
+    powershell -Command "try { Set-ExecutionPolicy RemoteSigned -Force -Scope LocalMachine; Write-Host 'ExecutionPolicy configurada' } catch { Write-Host 'Error al cambiar ExecutionPolicy' }" 2>nul
+    echo [INFO] ExecutionPolicy procesada
+) else (
+    echo [INFO] ExecutionPolicy no modificada. Continuando...
+)
+
+echo.
+echo ===============================================
+echo   INSTALANDO APPIUM GLOBALMENTE
+echo ===============================================
+echo.
+echo Instalando Appium en: !npm_folder!
+echo Esto puede tomar varios minutos...
+echo.
+
+:: Cambiar al directorio npm
+echo Cambiando al directorio: !npm_folder!
+if exist "!npm_folder!" (
+    pushd "!npm_folder!"
+) else (
+    echo ERROR: La carpeta !npm_folder! no existe.
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+:: Configurar npm para usar el directorio actual
+echo Configurando npm prefix...
+call npm config set prefix "!npm_folder!"
+call npm config set cache "!npm_folder!\npm-cache"
+
+:: Mostrar configuración actual
+echo Configuracion npm actual:
+call npm config get prefix
+call npm config get cache
+
+:: Instalar Appium
+echo.
+echo ========== INICIANDO INSTALACION DE APPIUM ==========
+echo Ejecutando: npm install -g appium
+call npm install -g appium
+set "install_result=!errorlevel!"
+
+echo Codigo de salida de npm: !install_result!
+
+if !install_result! neq 0 (
+    echo.
+    echo ERROR: Fallo la instalacion de Appium (codigo: !install_result!)
+    echo Intentando instalacion alternativa...
+    
+    echo Ejecutando: npm install -g appium --force --verbose
+    call npm install -g appium --force --verbose
+    set "install_result=!errorlevel!"
+    
+    if !install_result! neq 0 (
+        echo ERROR: La instalacion de Appium fallo con todos los metodos
+        echo Codigo de salida final: !install_result!
+        set /a error_count+=1
+        popd
+        endlocal
+        goto :eof
+    )
+)
+
+popd
+
+:: Verificar instalación
+echo.
+echo Verificando instalacion...
+if exist "!npm_folder!\appium.cmd" (
+    echo [VERIFICADO] Executable de Appium encontrado: !npm_folder!\appium.cmd
+) else if exist "!npm_folder!\node_modules\.bin\appium.cmd" (
+    echo [VERIFICADO] Executable de Appium encontrado: !npm_folder!\node_modules\.bin\appium.cmd
+) else if exist "!npm_folder!\appium" (
+    echo [VERIFICADO] Script de Appium encontrado: !npm_folder!\appium
+) else (
+    echo [ADVERTENCIA] No se encontro el executable de Appium en las ubicaciones esperadas
+    echo Contenido de !npm_folder!:
+    dir "!npm_folder!" | findstr appium
+)
+
+:: Agregar npm folder al PATH del sistema
+echo.
+echo ===============================================
+echo   CONFIGURANDO VARIABLES DE ENTORNO
+echo ===============================================
+echo.
+echo Agregando !npm_folder! al PATH del sistema...
+
+:: Obtener PATH actual
+for /f "skip=2 tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH 2^>nul') do set "current_path=%%b"
+
+:: Verificar si la ruta ya está en PATH
+echo !current_path! | findstr /i "!npm_folder!" >nul
+if !errorlevel! equ 0 (
+    echo [INFO] La ruta !npm_folder! ya esta en el PATH del sistema
+) else (
+    echo Agregando al PATH: !npm_folder!
+    powershell -Command "try { [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';!npm_folder!', 'Machine'); Write-Host 'PATH actualizado correctamente' } catch { Write-Host 'Error al actualizar PATH' }"
+    echo [INFO] Ruta agregada al PATH del sistema
+)
+
+:: También agregar la carpeta de binarios si existe
+set "npm_bin_folder=!npm_folder!\node_modules\.bin"
+if exist "!npm_bin_folder!" (
+    echo !current_path! | findstr /i "!npm_bin_folder!" >nul
+    if !errorlevel! neq 0 (
+        echo Agregando al PATH: !npm_bin_folder!
+        powershell -Command "try { [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';!npm_bin_folder!', 'Machine'); Write-Host 'PATH de binarios actualizado' } catch { Write-Host 'Error al actualizar PATH de binarios' }"
+        echo [INFO] Ruta de binarios agregada al PATH del sistema
+    )
+)
+
+:: Resumen final
+echo.
+echo ===============================================
+echo                   RESUMEN
+echo ===============================================
+echo Usuario seleccionado: !selected_user!
+echo Carpeta npm: !npm_folder!
+echo Fecha y hora: %DATE% %TIME%
+echo Equipo: %COMPUTERNAME%
+echo Ejecutado por: %USERNAME%
+echo ===============================================
+echo.
+echo [INFO] Para usar Appium desde cualquier ubicacion:
+echo [INFO] 1. Reinicie la consola/terminal
+echo [INFO] 2. Ejecute: appium --version
+echo [INFO] 3. Para iniciar Appium: appium
+echo [INFO] 4. Si no funciona, agregue manualmente al PATH: !npm_folder!
+echo ===============================================
+
+endlocal
+goto :eof
+
+:: Continúa con otras funciones...
