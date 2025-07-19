@@ -241,7 +241,16 @@ for %%a in (%applications%) do (
     ) else if "%%a"=="npm_appium" (
         call :install_npm_appium
     ) else if "%%a"=="Gestion_Hosts" (
-        call :gestion_hosts
+        echo Descargando herramienta de gestion de hosts...
+        curl -o "%temp%\configuraciones.bat" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/configuraciones.bat" 2>nul
+        if exist "%temp%\configuraciones.bat" (
+            echo Ejecutando gestion de hosts...
+            call "%temp%\configuraciones.bat"
+            if exist "%temp%\configuraciones.bat" del "%temp%\configuraciones.bat"
+        ) else (
+            echo ERROR: No se pudo descargar la herramienta de configuracion
+            set /a error_count+=1
+        )
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1083,45 +1092,6 @@ echo [INFO] 1. Reinicie la consola/terminal
 echo [INFO] 2. Ejecute: appium --version
 echo [INFO] 3. Para iniciar Appium: appium
 echo [INFO] 4. Si no funciona, agregue manualmente al PATH: !npm_folder!
-echo ===============================================
-
-endlocal
-goto :eof
-
-:gestion_hosts
-setlocal enabledelayedexpansion
-
-echo.
-echo ===============================================
-echo        GESTION DE ARCHIVO HOSTS DE WINDOWS
-echo ===============================================
-echo.
-
-echo [INFO] Mostrando contenido actual de hosts:
-type "%WINDIR%\System32\Drivers\Etc\hosts"
-echo.
-
-set /p "add_entry=¿Desea agregar una nueva entrada? [S/N]: "
-if /i "!add_entry!"=="S" (
-    echo.
-    set /p "ip=Ingrese la IP: "
-    set /p "dominio=Ingrese el dominio: "
-    echo.
-    echo Nueva entrada: !ip! !dominio!
-    set /p "confirm=¿Confirmar y agregar al archivo hosts? [S/N]: "
-    if /i "!confirm!"=="S" (
-        echo !ip! !dominio! >> "%WINDIR%\System32\Drivers\Etc\hosts"
-        echo [EXITOSO] Entrada agregada al archivo hosts.
-    ) else (
-        echo [INFO] Operacion cancelada por el usuario.
-    )
-) else (
-    echo [INFO] No se agregaron nuevas entradas.
-)
-
-echo.
-echo ===============================================
-echo         FIN DE GESTION DE ARCHIVO HOSTS
 echo ===============================================
 
 endlocal
