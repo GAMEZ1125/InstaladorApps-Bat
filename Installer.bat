@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions
+setlocal enabledelayedexpansion
 
 :: Función para encontrar winget automáticamente
 call :find_winget
