@@ -93,6 +93,7 @@ set apps[61]=Gradle-8.14.3.zip
 set apps[62]=MongoDB-Compass
 set apps[63]=npm_appium
 set apps[64]=Gestion_Hosts
+set apps[65]=apache-jmeter-5.6.3.zip
 
 :menu
 cls
@@ -103,22 +104,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-32 y 33-64)
+:: Mostrar menu en dos columnas (1-32 y 33-65)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,36) do (
+for /l %%i in (1,1,37) do (
     set /a right_col=%%i+32
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 32 (
-            if %%j leq 64 (
+            if %%j leq 65 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 32 (
-            if %%j leq 64 (
+            if %%j leq 65 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -148,7 +149,7 @@ if /i "%selection%" == "98" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-64"
+    set "selected=1-65"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -251,6 +252,8 @@ for %%a in (%applications%) do (
             echo ERROR: No se pudo descargar la herramienta de configuracion
             set /a error_count+=1
         )
+    ) else if "%%a"=="apache-jmeter-5.6.3.zip" (
+        call :install_zip "https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip" "C:\Program Files\apache-jmeter-5.6.3"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -381,6 +384,19 @@ if /i "%dest%"=="C:\IBMiAccess_v1r1" (
         echo [INFO] Variables GRADLE_HOME y PATH actualizadas. Reinicie la consola para aplicar cambios.
     ) else (
         echo ERROR: Directorio de Gradle no encontrado en "!gradle_home!"
+        set /a error_count+=1
+    )
+) else if /i "%dest%"=="C:\Program Files\apache-jmeter-5.6.3" (
+    set "jmeter_home=%dest%\apache-jmeter-5.6.3"
+    if exist "!jmeter_home!" (
+        echo Configurando variables de entorno para Apache JMeter...
+        powershell -Command "[Environment]::SetEnvironmentVariable('JMETER_HOME', '!jmeter_home!', 'Machine')"
+        powershell -Command "$env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';!jmeter_home!\bin'; [Environment]::SetEnvironmentVariable('Path', $env:Path, 'Machine')"
+        echo [INFO] Variables JMETER_HOME y PATH actualizadas. Reinicie la consola para aplicar cambios.
+        echo [INFO] JMeter GUI disponible ejecutando: jmeter
+        echo [INFO] JMeter CLI disponible ejecutando: jmeter -n -t test.jmx
+    ) else (
+        echo ERROR: Directorio de JMeter no encontrado en "!jmeter_home!"
         set /a error_count+=1
     )
 )
@@ -962,7 +978,7 @@ choice /C SN /N /M "Desea ejecutar Set-ExecutionPolicy RemoteSigned? [S]i [N]o: 
 if !errorlevel! equ 1 (
     echo.
     echo Configurando ExecutionPolicy a RemoteSigned...
-    powershell -Command "try { Set-ExecutionPolicy RemoteSigned -Force -Scope LocalMachine; Write-Host 'ExecutionPolicy configurada' } catch { Write-Host 'Error al cambiar ExecutionPolicy' }" 2>nul
+    powershell -Command "try { Set-ExecutionPolicy RemoteSigned -Force -Scope LocalMachine; Write-Host 'ExecutionPolicy configurada' } catch { Write-host 'Error al cambiar ExecutionPolicy' }" 2>nul
     echo [INFO] ExecutionPolicy procesada
 ) else (
     echo [INFO] ExecutionPolicy no modificada. Continuando...
