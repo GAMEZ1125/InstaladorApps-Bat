@@ -127,10 +127,10 @@ for /l %%i in (1,1,37) do (
 )
 echo  99. Borrado seguro de usuario
 echo  98. Temp_SQLDeveloper
-
+echo  97. Buscar aplicaciones
 echo.
 echo Ingrese numeros separados por comas (ej: 2,5,7-10)
-echo [A] Todos   [C] Confirmar   [S] Salir
+echo [A] Todos   [C] Confirmar   [S] Salir   [B] Buscar
 echo.
 set /p "selection=Seleccion: "
 
@@ -142,6 +142,18 @@ if /i "%selection%" == "99" (
 
 if /i "%selection%" == "98" (
     call :clean_sqldeveloper
+    pause
+    goto menu
+)
+
+if /i "%selection%" == "97" (
+    call :search_applications
+    pause
+    goto menu
+)
+
+if /i "%selection%" == "B" (
+    call :search_applications
     pause
     goto menu
 )
@@ -1108,6 +1120,264 @@ echo [INFO] 1. Reinicie la consola/terminal
 echo [INFO] 2. Ejecute: appium --version
 echo [INFO] 3. Para iniciar Appium: appium
 echo [INFO] 4. Si no funciona, agregue manualmente al PATH: !npm_folder!
+echo ===============================================
+
+endlocal
+goto :eof
+
+:search_applications
+setlocal enabledelayedexpansion
+
+echo.
+echo ===============================================
+echo          BUSQUEDA DE APLICACIONES
+echo ===============================================
+echo.
+echo Ingrese una palabra clave para buscar aplicaciones:
+echo (Ejemplos: java, microsoft, git, gradle, etc.)
+echo.
+set /p "search_term=Palabra clave: "
+
+if "!search_term!"=="" (
+    echo ERROR: Debe ingresar una palabra clave.
+    endlocal
+    goto :eof
+)
+
+echo.
+echo Buscando aplicaciones que contengan: "!search_term!"
+echo ===============================================
+
+:: Buscar aplicaciones que contengan el término
+set "found_count=0"
+set "found_apps="
+set "found_numbers="
+
+for /l %%i in (1,1,65) do (
+    if defined apps[%%i] (
+        set "app_name=!apps[%%i]!"
+        echo !app_name! | findstr /i "!search_term!" >nul
+        if !errorlevel! equ 0 (
+            set /a found_count+=1
+            set "found_apps=!found_apps! %%i"
+            echo  %%i. !app_name!
+        )
+    )
+)
+
+if !found_count! equ 0 (
+    echo.
+    echo No se encontraron aplicaciones que contengan "!search_term!".
+    echo.
+    echo Sugerencias:
+    echo - Verifique la ortografia
+    echo - Use terminos mas generales (ej: "java" en lugar de "openjdk")
+    echo - Use palabras clave en ingles
+    endlocal
+    goto :eof
+)
+
+echo.
+echo ===============================================
+echo Se encontraron !found_count! aplicacion(es)
+echo ===============================================
+echo.
+echo Opciones:
+echo [1] Seleccionar todas las aplicaciones encontradas
+echo [2] Seleccionar aplicaciones especificas
+echo [3] Volver al menu principal
+echo.
+set /p "search_action=Seleccione una opcion (1-3): "
+
+if "!search_action!"=="1" (
+    :: Seleccionar todas las encontradas
+    call :install_found_apps "!found_apps!"
+) else if "!search_action!"=="2" (
+    :: Selección específica
+    call :select_specific_apps "!found_apps!"
+) else if "!search_action!"=="3" (
+    endlocal
+    goto :eof
+) else (
+    echo Opcion invalida.
+    endlocal
+    goto :eof
+)
+
+endlocal
+goto :eof
+
+:install_found_apps
+setlocal enabledelayedexpansion
+set "selected_apps=%~1"
+
+echo.
+echo Aplicaciones seleccionadas para instalacion:
+echo -------------------------------------------
+set "applications="
+for %%i in (!selected_apps!) do (
+    echo  %%i. !apps[%%i]!
+    set "applications=!applications! !apps[%%i]!"
+)
+
+echo.
+echo ¿Instalar estas aplicaciones?
+choice /C SN /N /M "[S]i  [N]o: "
+if !errorlevel! equ 2 (
+    endlocal
+    goto :eof
+)
+
+:: Proceso de instalación (usar el mismo código del proceso principal)
+call :process_installation "!applications!"
+
+endlocal
+goto :eof
+
+:select_specific_apps
+setlocal enabledelayedexpansion
+set "available_apps=%~1"
+
+echo.
+echo Aplicaciones disponibles:
+echo ------------------------
+for %%i in (!available_apps!) do (
+    echo  %%i. !apps[%%i]!
+)
+
+echo.
+echo Ingrese los numeros de las aplicaciones que desea instalar
+echo (separados por comas, ej: 2,5,7 o rangos como 2-5):
+set /p "specific_selection=Seleccion: "
+
+if "!specific_selection!"=="" (
+    echo No se selecciono ninguna aplicacion.
+    endlocal
+    goto :eof
+)
+
+:: Validar que los números seleccionados estén en la lista de encontrados
+set "valid_selection="
+set "applications="
+
+:: Expandir rangos y comas
+for %%a in ("!specific_selection:,=" "%") do (
+    set "range=%%~a"
+    if "!range:-=!" neq "!range!" (
+        :: Es un rango
+        for /f "tokens=1,2 delims=-" %%b in ("!range!") do (
+            for /l %%k in (%%b,1,%%c) do (
+                :: Verificar que el número esté en la lista de encontrados
+                for %%j in (!available_apps!) do (
+                    if %%k equ %%j (
+                        set "valid_selection=!valid_selection! %%k"
+                        set "applications=!applications! !apps[%%k]!"
+                    )
+                )
+            )
+        )
+    ) else (
+        :: Es un número individual
+        for %%j in (!available_apps!) do (
+            if !range! equ %%j (
+                set "valid_selection=!valid_selection! !range!"
+                set "applications=!applications! !apps[%%j]!"
+            )
+        )
+    )
+)
+
+if "!applications!"=="" (
+    echo ERROR: No se seleccionaron aplicaciones validas.
+    endlocal
+    goto :eof
+)
+
+echo.
+echo Aplicaciones seleccionadas:
+echo --------------------------
+for %%a in (!applications!) do echo  - %%a
+
+echo.
+echo ¿Instalar estas aplicaciones?
+choice /C SN /N /M "[S]i  [N]o: "
+if !errorlevel! equ 2 (
+    endlocal
+    goto :eof
+)
+
+:: Proceso de instalación
+call :process_installation "!applications!"
+
+endlocal
+goto :eof
+
+:process_installation
+setlocal enabledelayedexpansion
+set "applications=%~1"
+
+:: Proceso de instalación (copiar desde el código principal)
+set error_count=0
+set application_count=0
+
+echo.
+echo Iniciando instalaciones desde busqueda...
+for %%a in (!applications!) do (
+    set /a application_count+=1
+    echo.
+    echo [%time%] Instalando %%a...
+    
+    :: Usar la misma lógica de instalación del código principal
+    if "%%a"=="IBMiAccess_v1r1.zip" (
+        call :install_zip "https://www.nicklitten.com/wp-content/uploads/IBMiAccess_v1r1.zip" "C:\IBMiAccess_v1r1"
+    ) else if "%%a"=="apache-maven-3.9.11-bin.zip" (
+        call :install_zip "https://dlcdn.apache.org/maven/maven-3/3.9.11/binaries/apache-maven-3.9.11-bin.zip" "C:\Program Files\apache-maven-3.9.11-bin"
+    ) else if "%%a"=="Gradle-8.13.zip" (
+        call :install_zip "https://services.gradle.org/distributions/gradle-8.13-bin.zip" "C:\Program Files\gradle-8.13"
+    ) else if "%%a"=="Gradle-8.5.zip" (
+        call :install_zip "https://services.gradle.org/distributions/gradle-8.5-all.zip" "C:\Program Files\gradle-8.5"
+    ) else if "%%a"=="Gradle-8.10.zip" (
+        call :install_zip "https://services.gradle.org/distributions/gradle-8.10.2-all.zip" "C:\Program Files\gradle-8.10"
+    ) else if "%%a"=="Elixir" (
+        call :install_elixir
+    ) else if "%%a"=="FusionInventory-Agent.exe" (
+        call :install_exe "https://github.com/fusioninventory/fusioninventory-agent/releases/download/2.6/fusioninventory-agent_windows-x64_2.6.exe"
+    ) else if "%%a"=="jenkins.msi" (
+        call :install_msi "https://get.jenkins.io/windows/2.509/jenkins.msi"
+    ) else if "%%a"=="npm_appium" (
+        call :install_npm_appium
+    ) else if "%%a"=="Gestion_Hosts" (
+        echo Descargando herramienta de gestion de hosts...
+        curl -o "%temp%\configuraciones.bat" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/configuraciones.bat" 2>nul
+        if exist "%temp%\configuraciones.bat" (
+            echo Ejecutando gestion de hosts...
+            call "%temp%\configuraciones.bat"
+            if exist "%temp%\configuraciones.bat" del "%temp%\configuraciones.bat"
+        ) else (
+            echo ERROR: No se pudo descargar la herramienta de configuracion
+            set /a error_count+=1
+        )
+    ) else if "%%a"=="apache-jmeter-5.6.3.zip" (
+        call :install_zip "https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip" "C:\Program Files\apache-jmeter-5.6.3"
+    ) else (
+        "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
+        if !errorlevel! neq 0 (
+            echo ERROR al instalar %%a
+            set /a error_count+=1
+        ) else (
+            echo %%a instalado correctamente
+        )
+    )
+)
+
+:: Resultado final
+echo.
+echo ===============================================
+echo      RESUMEN DE INSTALACION POR BUSQUEDA
+echo ===============================================
+echo Aplicaciones procesadas: !application_count!
+echo Errores: !error_count!
+if !error_count! gtr 0 echo Verifique los errores e intente instalar manualmente.
 echo ===============================================
 
 endlocal
