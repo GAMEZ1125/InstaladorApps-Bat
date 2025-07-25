@@ -94,6 +94,7 @@ set apps[62]=MongoDB-Compass
 set apps[63]=npm_appium
 set apps[64]=Gestion_Hosts
 set apps[65]=apache-jmeter-5.6.3.zip
+set apps[66]=mysql-connector-odbc-9.4.0-winx64.msi
 
 :menu
 cls
@@ -104,22 +105,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-32 y 33-65)
+:: Mostrar menu en dos columnas (1-32 y 33-66)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,37) do (
+for /l %%i in (1,1,38) do (
     set /a right_col=%%i+32
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,32!"
         if %%i leq 32 (
-            if %%j leq 65 (
+            if %%j leq 66 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 32 (
-            if %%j leq 65 (
+            if %%j leq 66 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -161,7 +162,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-65"
+    set "selected=1-66"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -266,6 +267,8 @@ for %%a in (%applications%) do (
         )
     ) else if "%%a"=="apache-jmeter-5.6.3.zip" (
         call :install_zip "https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip" "C:\Program Files\apache-jmeter-5.6.3"
+    ) else if "%%a"=="mysql-connector-odbc-9.4.0-winx64.msi" (
+        call :install_msi "https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -492,9 +495,36 @@ set msi_url=%~1
 set msi_file=%temp%\%~nx1
 
 echo Descargando instalador MSI...
-powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'"
+
+:: URLs de respaldo para MySQL Connector
+if "%~nx1"=="mysql-connector-odbc-9.4.0-winx64.msi" (
+    echo Intentando descarga desde servidor principal...
+    powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'" 2>nul
+    
+    if not exist "%msi_file%" (
+        echo Servidor principal no disponible, probando URL alternativa...
+        powershell -Command "Invoke-WebRequest -Uri 'https://cdn.mysql.com/Downloads/Connector-ODBC/9.4/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'" 2>nul
+    )
+    
+    if not exist "%msi_file%" (
+        echo Probando espejo de descarga...
+        powershell -Command "Invoke-WebRequest -Uri 'https://downloads.mysql.com/archives/get/p/10/file/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'" 2>nul
+    )
+    
+    if not exist "%msi_file%" (
+        echo Probando descarga directa desde archivo local...
+        powershell -Command "Invoke-WebRequest -Uri 'https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'" 2>nul
+    )
+) else (
+    :: Para otros MSI usar la URL original
+    powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'"
+)
+
 if not exist "%msi_file%" (
-    echo ERROR: Fallo en la descarga
+    echo ERROR: Fallo en la descarga desde todas las fuentes disponibles
+    echo INFO: El sitio de MySQL puede estar experimentando problemas temporales
+    echo SOLUCION: Intente nuevamente en unos minutos o descargue manualmente desde:
+    echo https://dev.mysql.com/downloads/connector/odbc/
     set /a error_count+=1
     goto :eof
 )
@@ -1153,7 +1183,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,65) do (
+for /l %%i in (1,1,66) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -1359,6 +1389,8 @@ for %%a in (!applications!) do (
         )
     ) else if "%%a"=="apache-jmeter-5.6.3.zip" (
         call :install_zip "https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip" "C:\Program Files\apache-jmeter-5.6.3"
+    ) else if "%%a"=="mysql-connector-odbc-9.4.0-winx64.msi" (
+        call :install_msi "https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
