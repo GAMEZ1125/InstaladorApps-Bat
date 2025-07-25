@@ -95,6 +95,7 @@ set apps[63]=npm_appium
 set apps[64]=Gestion_Hosts
 set apps[65]=apache-jmeter-5.6.3.zip
 set apps[66]=mysql-connector-odbc-9.4.0-winx64.msi
+set apps[67]=mysql-connector-net-9.4.0.msi
 
 :menu
 cls
@@ -105,22 +106,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-32 y 33-66)
+:: Mostrar menu en dos columnas (1-35 y 36-67)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,38) do (
-    set /a right_col=%%i+32
+for /l %%i in (1,1,39) do (
+    set /a right_col=%%i+35
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
-        set "left_app=!left_app:~0,32!"
-        if %%i leq 32 (
-            if %%j leq 66 (
+        set "left_app=!left_app:~0,35!"
+        if %%i leq 35 (
+            if %%j leq 67 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
-        ) else if %%i gtr 32 (
-            if %%j leq 66 (
+        ) else if %%i gtr 35 (
+            if %%j leq 67 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -162,7 +163,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-66"
+    set "selected=1-67"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -269,6 +270,8 @@ for %%a in (%applications%) do (
         call :install_zip "https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip" "C:\Program Files\apache-jmeter-5.6.3"
     ) else if "%%a"=="mysql-connector-odbc-9.4.0-winx64.msi" (
         call :install_msi "https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi"
+    ) else if "%%a"=="mysql-connector-net-9.4.0.msi" (
+        call :install_msi "https://dev.mysql.com/get/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -515,6 +518,24 @@ if "%~nx1"=="mysql-connector-odbc-9.4.0-winx64.msi" (
         echo Probando descarga directa desde archivo local...
         powershell -Command "Invoke-WebRequest -Uri 'https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'" 2>nul
     )
+) else if "%~nx1"=="mysql-connector-net-9.4.0.msi" (
+    echo Intentando descarga desde servidor principal...
+    powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'" 2>nul
+    
+    if not exist "%msi_file%" (
+        echo Servidor principal no disponible, probando URL alternativa...
+        powershell -Command "Invoke-WebRequest -Uri 'https://cdn.mysql.com/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'" 2>nul
+    )
+    
+    if not exist "%msi_file%" (
+        echo Probando espejo de descarga...
+        powershell -Command "Invoke-WebRequest -Uri 'https://downloads.mysql.com/archives/get/p/6/file/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'" 2>nul
+    )
+    
+    if not exist "%msi_file%" (
+        echo Probando descarga directa desde archivo local...
+        powershell -Command "Invoke-WebRequest -Uri 'https://dev.mysql.com/get/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'" 2>nul
+    )
 ) else (
     :: Para otros MSI usar la URL original
     powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'"
@@ -522,9 +543,17 @@ if "%~nx1"=="mysql-connector-odbc-9.4.0-winx64.msi" (
 
 if not exist "%msi_file%" (
     echo ERROR: Fallo en la descarga desde todas las fuentes disponibles
-    echo INFO: El sitio de MySQL puede estar experimentando problemas temporales
-    echo SOLUCION: Intente nuevamente en unos minutos o descargue manualmente desde:
-    echo https://dev.mysql.com/downloads/connector/odbc/
+    if "%~nx1"=="mysql-connector-odbc-9.4.0-winx64.msi" (
+        echo INFO: El sitio de MySQL puede estar experimentando problemas temporales
+        echo SOLUCION: Intente nuevamente en unos minutos o descargue manualmente desde:
+        echo https://dev.mysql.com/downloads/connector/odbc/
+    ) else if "%~nx1"=="mysql-connector-net-9.4.0.msi" (
+        echo INFO: El sitio de MySQL puede estar experimentando problemas temporales
+        echo SOLUCION: Intente nuevamente en unos minutos o descargue manualmente desde:
+        echo https://dev.mysql.com/downloads/connector/net/
+    ) else (
+        echo INFO: Verifique la URL de descarga e intente nuevamente
+    )
     set /a error_count+=1
     goto :eof
 )
@@ -1183,7 +1212,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,66) do (
+for /l %%i in (1,1,67) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -1391,6 +1420,8 @@ for %%a in (!applications!) do (
         call :install_zip "https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip" "C:\Program Files\apache-jmeter-5.6.3"
     ) else if "%%a"=="mysql-connector-odbc-9.4.0-winx64.msi" (
         call :install_msi "https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi"
+    ) else if "%%a"=="mysql-connector-net-9.4.0.msi" (
+        call :install_msi "https://dev.mysql.com/get/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
