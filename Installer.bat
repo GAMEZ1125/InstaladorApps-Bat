@@ -96,6 +96,7 @@ set apps[64]=Gestion_Hosts
 set apps[65]=apache-jmeter-5.6.3.zip
 set apps[66]=mysql-connector-odbc-9.4.0-winx64.msi
 set apps[67]=mysql-connector-net-9.4.0.msi
+set apps[68]=Docker.DockerDesktop
 
 :menu
 cls
@@ -106,7 +107,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-35 y 36-67)
+:: Mostrar menu en dos columnas (1-35 y 36-68)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -115,13 +116,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,35!"
         if %%i leq 35 (
-            if %%j leq 67 (
+            if %%j leq 68 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 35 (
-            if %%j leq 67 (
+            if %%j leq 68 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -163,7 +164,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-67"
+    set "selected=1-68"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -1212,7 +1213,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,67) do (
+for /l %%i in (1,1,68) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
