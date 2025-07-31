@@ -97,6 +97,8 @@ set apps[65]=apache-jmeter-5.6.3.zip
 set apps[66]=mysql-connector-odbc-9.4.0-winx64.msi
 set apps[67]=mysql-connector-net-9.4.0.msi
 set apps[68]=Docker.DockerDesktop
+set apps[69]=Gestion_Certificados
+
 
 :menu
 cls
@@ -107,7 +109,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-35 y 36-68)
+:: Mostrar menu en dos columnas (1-35 y 36-69)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -116,13 +118,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,35!"
         if %%i leq 35 (
-            if %%j leq 68 (
+            if %%j leq 69 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 35 (
-            if %%j leq 68 (
+            if %%j leq 69 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -164,7 +166,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-68"
+    set "selected=1-69"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -265,6 +267,17 @@ for %%a in (%applications%) do (
             if exist "%temp%\configuraciones.bat" del "%temp%\configuraciones.bat"
         ) else (
             echo ERROR: No se pudo descargar la herramienta de configuracion
+            set /a error_count+=1
+        )
+    ) else if "%%a"=="Gestion_Certificados" (
+        echo Descargando herramienta de gestion de certificados...
+        curl -o "%temp%\certificados.bat" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/certificados.bat" 2>nul
+        if exist "%temp%\certificados.bat" (
+            echo Ejecutando gestion de certificados...
+            call "%temp%\certificados.bat"
+            if exist "%temp%\certificados.bat" del "%temp%\certificados.bat"
+        ) else (
+            echo ERROR: No se pudo descargar la herramienta de certificados
             set /a error_count+=1
         )
     ) else if "%%a"=="apache-jmeter-5.6.3.zip" (
@@ -1213,7 +1226,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,68) do (
+for /l %%i in (1,1,69) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
