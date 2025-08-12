@@ -99,6 +99,7 @@ set apps[67]=mysql-connector-net-9.4.0.msi
 set apps[68]=Docker.DockerDesktop
 set apps[69]=Gestion_Certificados
 set apps[70]=Gestion_Adaptadores_de_Red
+set apps[71]=OfimaBot
 
 
 :menu
@@ -119,13 +120,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,35!"
         if %%i leq 35 (
-            if %%j leq 70 (
+            if %%j leq 71 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 35 (
-            if %%j leq 70 (
+            if %%j leq 71 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -167,7 +168,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-70"
+    set "selected=1-71"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -298,6 +299,8 @@ for %%a in (%applications%) do (
         call :install_msi "https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi"
     ) else if "%%a"=="mysql-connector-net-9.4.0.msi" (
         call :install_msi "https://dev.mysql.com/get/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi"
+    ) else if "%%a"=="OfimaBot" (
+        call :install_ofimabot
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -528,39 +531,39 @@ echo Descargando instalador MSI...
 :: URLs de respaldo para MySQL Connector
 if "%~nx1"=="mysql-connector-odbc-9.4.0-winx64.msi" (
     echo Intentando descarga desde servidor principal...
-    powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'" 2>nul
+    powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'"
     
     if not exist "%msi_file%" (
         echo Servidor principal no disponible, probando URL alternativa...
-        powershell -Command "Invoke-WebRequest -Uri 'https://cdn.mysql.com/Downloads/Connector-ODBC/9.4/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'" 2>nul
+        powershell -Command "Invoke-WebRequest -Uri 'https://cdn.mysql.com/Downloads/Connector-ODBC/9.4/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'"
     )
     
     if not exist "%msi_file%" (
         echo Probando espejo de descarga...
-        powershell -Command "Invoke-WebRequest -Uri 'https://downloads.mysql.com/archives/get/p/10/file/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'" 2>nul
+        powershell -Command "Invoke-WebRequest -Uri 'https://downloads.mysql.com/archives/get/p/10/file/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'"
     )
     
     if not exist "%msi_file%" (
         echo Probando descarga directa desde archivo local...
-        powershell -Command "Invoke-WebRequest -Uri 'https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'" 2>nul
+        powershell -Command "Invoke-WebRequest -Uri 'https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi' -OutFile '%msi_file%'"
     )
 ) else if "%~nx1"=="mysql-connector-net-9.4.0.msi" (
     echo Intentando descarga desde servidor principal...
-    powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'" 2>nul
+    powershell -Command "Invoke-WebRequest -Uri '%msi_url%' -OutFile '%msi_file%'"
     
     if not exist "%msi_file%" (
         echo Servidor principal no disponible, probando URL alternativa...
-        powershell -Command "Invoke-WebRequest -Uri 'https://cdn.mysql.com/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'" 2>nul
+        powershell -Command "Invoke-WebRequest -Uri 'https://cdn.mysql.com/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'"
     )
     
     if not exist "%msi_file%" (
         echo Probando espejo de descarga...
-        powershell -Command "Invoke-WebRequest -Uri 'https://downloads.mysql.com/archives/get/p/6/file/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'" 2>nul
+        powershell -Command "Invoke-WebRequest -Uri 'https://downloads.mysql.com/archives/get/p/6/file/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'"
     )
     
     if not exist "%msi_file%" (
         echo Probando descarga directa desde archivo local...
-        powershell -Command "Invoke-WebRequest -Uri 'https://dev.mysql.com/get/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'" 2>nul
+        powershell -Command "Invoke-WebRequest -Uri 'https://dev.mysql.com/get/mysql-connector-net-9.4.0.msi' -OutFile '%msi_file%'"
     )
 ) else (
     :: Para otros MSI usar la URL original
@@ -1238,7 +1241,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,70) do (
+for /l %%i in (1,1,71) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -1448,6 +1451,8 @@ for %%a in (!applications!) do (
         call :install_msi "https://dev.mysql.com/get/mysql-connector-odbc-9.4.0-winx64.msi"
     ) else if "%%a"=="mysql-connector-net-9.4.0.msi" (
         call :install_msi "https://dev.mysql.com/get/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi"
+    ) else if "%%a"=="OfimaBot" (
+        call :install_ofimabot
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1468,6 +1473,159 @@ echo Aplicaciones procesadas: !application_count!
 echo Errores: !error_count!
 if !error_count! gtr 0 echo Verifique los errores e intente instalar manualmente.
 echo ===============================================
+
+endlocal
+goto :eof
+
+:install_ofimabot
+setlocal enabledelayedexpansion
+
+echo.
+echo ===============================================
+echo           INSTALACION DE OFIMABOT
+echo ===============================================
+echo.
+
+set "ofimabot_url=https://www.ofima.com/wp-content/uploads/2024/03/Ofimabot.zip"
+set "ofimabot_zip=%temp%\Ofimabot.zip"
+set "extract_dir=%temp%\ofimabot_extract"
+
+echo Descargando OfimaBot desde: %ofimabot_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%ofimabot_url%' -OutFile '%ofimabot_zip%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
+
+if not exist "%ofimabot_zip%" (
+    echo ERROR: Fallo en la descarga de OfimaBot
+    echo Verifique la conexion a internet e intente nuevamente.
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+echo Verificando archivo descargado...
+for %%F in ("%ofimabot_zip%") do set file_size=%%~zF
+if %file_size% LSS 10000 (
+    echo ERROR: Archivo descargado incompleto ^(tamaño: %file_size% bytes^)
+    echo El archivo puede estar corrupto o la URL no es valida.
+    set /a error_count+=1
+    if exist "%ofimabot_zip%" del "%ofimabot_zip%"
+    endlocal
+    goto :eof
+)
+
+echo [INFO] Archivo descargado correctamente ^(tamaño: %file_size% bytes^)
+
+echo.
+echo Extrayendo OfimaBot...
+if not exist "%extract_dir%" mkdir "%extract_dir%"
+
+:: Intentar extracción con PowerShell primero
+powershell -Command "try { Expand-Archive -Path '%ofimabot_zip%' -DestinationPath '%extract_dir%' -Force; Write-Host 'Extraccion PowerShell exitosa' } catch { Write-Host 'Error en extraccion PowerShell' }"
+
+:: Verificar si la extracción fue exitosa
+set "exe_found="
+for /r "%extract_dir%" %%f in (*.exe) do (
+    if /i "%%~nf"=="Ofimabot" (
+        set "exe_found=%%f"
+        echo [ENCONTRADO] Ejecutable: %%f
+    )
+)
+
+:: Si no se encontró con PowerShell, intentar con tar
+if not defined exe_found (
+    echo Intentando extraccion alternativa con tar...
+    tar -xf "%ofimabot_zip%" -C "%extract_dir%" 2>nul
+    
+    :: Buscar nuevamente el ejecutable
+    for /r "%extract_dir%" %%f in (*.exe) do (
+        if /i "%%~nf"=="Ofimabot" (
+            set "exe_found=%%f"
+            echo [ENCONTRADO] Ejecutable: %%f
+        )
+    )
+)
+
+:: Si aún no se encuentra, intentar con VBScript
+if not defined exe_found (
+    echo Intentando extraccion con VBScript...
+    echo Set objShell = CreateObject^("Shell.Application"^) > "%temp%\extract_ofimabot.vbs"
+    echo Set objFolder = objShell.NameSpace^("%ofimabot_zip%"^) >> "%temp%\extract_ofimabot.vbs"
+    echo Set objFolderItem = objShell.NameSpace^("%extract_dir%"^) >> "%temp%\extract_ofimabot.vbs"
+    echo If Not objFolder Is Nothing Then objFolderItem.CopyHere objFolder.Items, 256 >> "%temp%\extract_ofimabot.vbs"
+    cscript //nologo "%temp%\extract_ofimabot.vbs" 2>nul
+    del "%temp%\extract_ofimabot.vbs"
+    
+    :: Buscar una vez más el ejecutable
+    for /r "%extract_dir%" %%f in (*.exe) do (
+        if /i "%%~nf"=="Ofimabot" (
+            set "exe_found=%%f"
+            echo [ENCONTRADO] Ejecutable: %%f
+        )
+    )
+)
+
+if not defined exe_found (
+    echo ERROR: No se pudo encontrar Ofimabot.exe en el archivo extraido
+    echo Contenido del directorio extraido:
+    dir "%extract_dir%" /s /b 2>nul | findstr /i "\.exe"
+    set /a error_count+=1
+    goto :cleanup_ofimabot
+)
+
+echo.
+echo Instalando OfimaBot silenciosamente...
+echo Ejecutable encontrado en: !exe_found!
+
+:: Intentar instalación silenciosa con diferentes parámetros
+echo Probando instalacion con parametros silenciosos /S...
+start /wait "" "!exe_found!" /S
+set install_result=!errorlevel!
+
+if !install_result! neq 0 (
+    echo Primer intento fallo ^(codigo: !install_result!^), probando con /SILENT...
+    start /wait "" "!exe_found!" /SILENT /NORESTART
+    set install_result=!errorlevel!
+)
+
+if !install_result! neq 0 (
+    echo Segundo intento fallo ^(codigo: !install_result!^), probando con /VERYSILENT...
+    start /wait "" "!exe_found!" /VERYSILENT /NORESTART
+    set install_result=!errorlevel!
+)
+
+if !install_result! neq 0 (
+    echo Tercer intento fallo ^(codigo: !install_result!^), probando con /q...
+    start /wait "" "!exe_found!" /q
+    set install_result=!errorlevel!
+)
+
+if !install_result! neq 0 (
+    echo ERROR: La instalacion de OfimaBot fallo con todos los parametros intentados
+    echo Codigo de salida final: !install_result!
+    echo.
+    echo SOLUCION MANUAL:
+    echo 1. El ejecutable se encuentra en: !exe_found!
+    echo 2. Ejecute manualmente la instalacion
+    echo 3. O intente con otros parametros silenciosos
+    set /a error_count+=1
+) else (
+    echo.
+    echo ===============================================
+    echo    OFIMABOT INSTALADO CORRECTAMENTE
+    echo ===============================================
+    echo [EXITOSO] OfimaBot se ha instalado silenciosamente
+    echo [INFO] Verifique el menu de inicio o escritorio para acceder a OfimaBot
+    echo [INFO] La aplicacion deberia estar disponible en Programs Files
+)
+
+:cleanup_ofimabot
+echo.
+echo Limpiando archivos temporales...
+if exist "%ofimabot_zip%" del "%ofimabot_zip%"
+if exist "%extract_dir%" (
+    rmdir /s /q "%extract_dir%" 2>nul
+)
+
+echo [INFO] Limpieza completada
 
 endlocal
 goto :eof
