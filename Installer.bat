@@ -100,6 +100,7 @@ set apps[68]=Docker.DockerDesktop
 set apps[69]=Gestion_Certificados
 set apps[70]=Gestion_Adaptadores_de_Red
 set apps[71]=OfimaBot
+set apps[72]=UIPath
 
 
 :menu
@@ -111,22 +112,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-35 y 36-70)
+:: Mostrar menu en dos columnas (1-37 y 36-72)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
-    set /a right_col=%%i+35
+    set /a right_col=%%i+37
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
-        set "left_app=!left_app:~0,35!"
-        if %%i leq 35 (
-            if %%j leq 71 (
+        set "left_app=!left_app:~0,37!"
+        if %%i leq 37 (
+            if %%j leq 72 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
-        ) else if %%i gtr 35 (
-            if %%j leq 71 (
+        ) else if %%i gtr 37 (
+            if %%j leq 72 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -168,7 +169,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-71"
+    set "selected=1-72"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -301,6 +302,8 @@ for %%a in (%applications%) do (
         call :install_msi "https://dev.mysql.com/get/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi"
     ) else if "%%a"=="OfimaBot" (
         call :install_ofimabot
+    ) else if "%%a"=="UIPath" (
+        call :install_uipath
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1453,6 +1456,8 @@ for %%a in (!applications!) do (
         call :install_msi "https://dev.mysql.com/get/Downloads/Connector-Net/mysql-connector-net-9.4.0.msi"
     ) else if "%%a"=="OfimaBot" (
         call :install_ofimabot
+    ) else if "%%a"=="UIPath" (
+        call :install_uipath
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1624,6 +1629,72 @@ if exist "%ofimabot_zip%" del "%ofimabot_zip%"
 if exist "%extract_dir%" (
     rmdir /s /q "%extract_dir%" 2>nul
 )
+
+echo [INFO] Limpieza completada
+
+endlocal
+goto :eof
+
+:install_uipath
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo           INSTALACION DE UIPATH
+echo ===============================================
+echo.
+
+set "uipath_url=https://download.uipath.com/UiPathStudioCommunity.msi"
+set "uipath_msi=%temp%\UiPathStudioCommunity.msi"
+
+echo Descargando UIPath Studio Community desde: %uipath_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%uipath_url%' -OutFile '%uipath_msi%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
+
+if not exist "%uipath_msi%" (
+    echo ERROR: Fallo en la descarga de UIPath Studio Community
+    echo SOLUCION: Verifique su conexion a internet e intente nuevamente
+    echo URL: %uipath_url%
+    set /a error_count+=1
+    goto :cleanup_uipath
+)
+
+:: Verificar tamaño del archivo (debe ser mayor a 1MB)
+for %%F in ("%uipath_msi%") do set file_size=%%~zF
+if %file_size% lss 1048576 (
+    echo ERROR: El archivo descargado parece estar incompleto o corrupto
+    echo Tamaño del archivo: %file_size% bytes
+    if exist "%uipath_msi%" del "%uipath_msi%"
+    set /a error_count+=1
+    goto :cleanup_uipath
+)
+
+echo Archivo descargado correctamente. Tamaño: %file_size% bytes
+echo.
+echo Ejecutando instalacion silenciosa de UIPath Studio Community...
+echo [INFO] Esto puede tomar varios minutos, por favor espere...
+
+:: Instalar UIPath de manera silenciosa
+start /wait msiexec.exe /i "%uipath_msi%" /qn /norestart ADDLOCAL=ALL
+
+if !errorlevel! neq 0 (
+    echo ERROR: Fallo en la instalacion de UIPath Studio Community
+    echo Codigo de error: !errorlevel!
+    echo.
+    echo POSIBLES SOLUCIONES:
+    echo 1. Ejecute el script como administrador
+    echo 2. Verifique que tenga suficiente espacio en disco
+    echo 3. Cierre otras aplicaciones que puedan interferir
+    echo 4. Intente instalar manualmente desde: %uipath_msi%
+    set /a error_count+=1
+) else (
+    echo [EXITOSO] UIPath Studio Community se ha instalado correctamente
+    echo [INFO] Verifique el menu de inicio o escritorio para acceder a UIPath
+    echo [INFO] La aplicacion deberia estar disponible en Programs Files
+)
+
+:cleanup_uipath
+echo.
+echo Limpiando archivos temporales...
+if exist "%uipath_msi%" del "%uipath_msi%"
 
 echo [INFO] Limpieza completada
 
