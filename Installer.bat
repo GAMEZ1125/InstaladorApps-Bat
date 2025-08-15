@@ -101,6 +101,7 @@ set apps[69]=Gestion_Certificados
 set apps[70]=Gestion_Adaptadores_de_Red
 set apps[71]=OfimaBot
 set apps[72]=UIPath
+set apps[73]=Office365_32bits
 
 
 :menu
@@ -112,7 +113,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 36-72)
+:: Mostrar menu en dos columnas (1-37 y 36-73)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -121,13 +122,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 72 (
+            if %%j leq 73 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 72 (
+            if %%j leq 73 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -169,7 +170,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-72"
+    set "selected=1-73"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -304,6 +305,8 @@ for %%a in (%applications%) do (
         call :install_ofimabot
     ) else if "%%a"=="UIPath" (
         call :install_uipath
+    ) else if "%%a"=="Office365_32bits" (
+        call :install_office365_32bits
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1458,6 +1461,8 @@ for %%a in (!applications!) do (
         call :install_ofimabot
     ) else if "%%a"=="UIPath" (
         call :install_uipath
+    ) else if "%%a"=="Office365_32bits" (
+        call :install_office365_32bits
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1695,6 +1700,73 @@ if !errorlevel! neq 0 (
 echo.
 echo Limpiando archivos temporales...
 if exist "%uipath_msi%" del "%uipath_msi%"
+
+echo [INFO] Limpieza completada
+
+endlocal
+goto :eof
+
+:install_office365_32bits
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo       INSTALACION DE OFFICE 365 32-BITS
+echo ===============================================
+echo.
+
+set "office365_url=https://descargas-xelerica.netlify.app/assets/downloads/OfficeSetup32.exe"
+set "office365_exe=%temp%\OfficeSetup32.exe"
+
+echo Descargando Office 365 32-bits desde: %office365_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%office365_url%' -OutFile '%office365_exe%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
+
+if not exist "%office365_exe%" (
+    echo ERROR: Fallo en la descarga de Office 365 32-bits
+    echo SOLUCION: Verifique su conexion a internet e intente nuevamente
+    echo URL: %office365_url%
+    set /a error_count+=1
+    goto :cleanup_office365
+)
+
+:: Verificar tamaño del archivo (debe ser mayor a 5MB)
+for %%F in ("%office365_exe%") do set file_size=%%~zF
+if %file_size% lss 5242880 (
+    echo ERROR: El archivo descargado parece estar incompleto o corrupto
+    echo Tamaño del archivo: %file_size% bytes
+    if exist "%office365_exe%" del "%office365_exe%"
+    set /a error_count+=1
+    goto :cleanup_office365
+)
+
+echo Archivo descargado correctamente. Tamaño: %file_size% bytes
+echo.
+echo Ejecutando instalacion silenciosa de Office 365 32-bits...
+echo [INFO] Esto puede tomar varios minutos, por favor espere...
+
+:: Instalar Office 365 de manera silenciosa
+start /wait "%office365_exe%" /quiet /norestart
+
+if !errorlevel! neq 0 (
+    echo ERROR: Fallo en la instalacion de Office 365 32-bits
+    echo Codigo de error: !errorlevel!
+    echo.
+    echo POSIBLES SOLUCIONES:
+    echo 1. Ejecute el script como administrador
+    echo 2. Verifique que tenga suficiente espacio en disco
+    echo 3. Cierre otras aplicaciones que puedan interferir
+    echo 4. Desinstale versiones previas de Office antes de continuar
+    echo 5. Intente instalar manualmente desde: %office365_exe%
+    set /a error_count+=1
+) else (
+    echo [EXITOSO] Office 365 32-bits se ha instalado correctamente
+    echo [INFO] Verifique el menu de inicio para acceder a las aplicaciones de Office
+    echo [INFO] Las aplicaciones deberian estar disponibles en unos minutos
+)
+
+:cleanup_office365
+echo.
+echo Limpiando archivos temporales...
+if exist "%office365_exe%" del "%office365_exe%"
 
 echo [INFO] Limpieza completada
 
