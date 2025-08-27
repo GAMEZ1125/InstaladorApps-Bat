@@ -102,6 +102,7 @@ set apps[70]=Gestion_Adaptadores_de_Red
 set apps[71]=OfimaBot
 set apps[72]=UIPath
 set apps[73]=Office365_32bits
+set apps[74]=Gradle_v9.0.0
 
 
 :menu
@@ -113,7 +114,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 36-73)
+:: Mostrar menu en dos columnas (1-37 y 36-74)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -122,13 +123,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 73 (
+            if %%j leq 74 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 73 (
+            if %%j leq 74 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -170,7 +171,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-73"
+    set "selected=1-74"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -307,6 +308,8 @@ for %%a in (%applications%) do (
         call :install_uipath
     ) else if "%%a"=="Office365_32bits" (
         call :install_office365_32bits
+    ) else if "%%a"=="Gradle_v9.0.0" (
+        call :install_gradle_v9
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1463,6 +1466,8 @@ for %%a in (!applications!) do (
         call :install_uipath
     ) else if "%%a"=="Office365_32bits" (
         call :install_office365_32bits
+    ) else if "%%a"=="Gradle_v9.0.0" (
+        call :install_gradle_v9
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1767,6 +1772,129 @@ if !errorlevel! neq 0 (
 echo.
 echo Limpiando archivos temporales...
 if exist "%office365_exe%" del "%office365_exe%"
+
+echo [INFO] Limpieza completada
+
+endlocal
+goto :eof
+
+:install_gradle_v9
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo         INSTALACION DE GRADLE v9.0.0
+echo ===============================================
+echo.
+
+set "gradle_url=https://services.gradle.org/distributions/gradle-9.0.0-all.zip"
+set "gradle_zip=%temp%\gradle-9.0.0-all.zip"
+set "gradle_extract=%temp%\gradle_extract"
+set "gradle_install=C:\Program Files\gradle-9.0.0"
+
+echo Descargando Gradle 9.0.0 desde: %gradle_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%gradle_url%' -OutFile '%gradle_zip%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
+
+if not exist "%gradle_zip%" (
+    echo ERROR: Fallo en la descarga de Gradle 9.0.0
+    echo SOLUCION: Verifique su conexion a internet e intente nuevamente
+    echo URL: %gradle_url%
+    set /a error_count+=1
+    goto :cleanup_gradle
+)
+
+:: Verificar tamaño del archivo (debe ser mayor a 100MB)
+for %%F in ("%gradle_zip%") do set file_size=%%~zF
+if %file_size% lss 104857600 (
+    echo ERROR: El archivo descargado parece estar incompleto o corrupto
+    echo Tamaño del archivo: %file_size% bytes
+    if exist "%gradle_zip%" del "%gradle_zip%"
+    set /a error_count+=1
+    goto :cleanup_gradle
+)
+
+echo Archivo descargado correctamente. Tamaño: %file_size% bytes
+echo.
+
+:: Crear directorio de extracción temporal
+if exist "%gradle_extract%" rmdir /s /q "%gradle_extract%" 2>nul
+mkdir "%gradle_extract%" 2>nul
+
+echo Extrayendo Gradle 9.0.0...
+powershell -Command "Expand-Archive -Path '%gradle_zip%' -DestinationPath '%gradle_extract%' -Force"
+
+if not exist "%gradle_extract%\gradle-9.0.0" (
+    echo ERROR: Fallo en la extraccion de Gradle
+    set /a error_count+=1
+    goto :cleanup_gradle
+)
+
+echo Instalando Gradle en: %gradle_install%
+
+:: Crear directorio de instalacion si no existe
+if not exist "C:\Program Files" mkdir "C:\Program Files" 2>nul
+if exist "%gradle_install%" rmdir /s /q "%gradle_install%" 2>nul
+
+:: Mover archivos extraidos al directorio de instalacion
+move "%gradle_extract%\gradle-9.0.0" "%gradle_install%" >nul 2>&1
+
+if not exist "%gradle_install%\bin\gradle.bat" (
+    echo ERROR: Fallo en la instalacion de Gradle
+    echo No se encontro el archivo gradle.bat en el directorio de instalacion
+    set /a error_count+=1
+    goto :cleanup_gradle
+)
+
+echo Configurando variables de entorno...
+
+:: Configurar GRADLE_HOME
+setx GRADLE_HOME "%gradle_install%" /M >nul 2>&1
+if !errorlevel! neq 0 (
+    echo ADVERTENCIA: No se pudo configurar GRADLE_HOME como variable de sistema
+    echo Intentando configurar para el usuario actual...
+    setx GRADLE_HOME "%gradle_install%" >nul 2>&1
+)
+
+:: Obtener PATH actual del sistema
+for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH 2^>nul') do set "system_path=%%b"
+
+:: Verificar si Gradle ya esta en el PATH
+echo !system_path! | find /i "gradle" >nul
+if !errorlevel! neq 0 (
+    echo Agregando Gradle al PATH del sistema...
+    setx PATH "!system_path!;%gradle_install%\bin" /M >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo ADVERTENCIA: No se pudo agregar Gradle al PATH del sistema
+        echo Agregando al PATH del usuario actual...
+        setx PATH "%PATH%;%gradle_install%\bin" >nul 2>&1
+    )
+) else (
+    echo Gradle ya esta configurado en el PATH del sistema
+)
+
+:: Actualizar PATH para la sesion actual
+set "PATH=%PATH%;%gradle_install%\bin"
+set "GRADLE_HOME=%gradle_install%"
+
+echo.
+echo Verificando la instalacion...
+"%gradle_install%\bin\gradle.bat" --version >nul 2>&1
+if !errorlevel! equ 0 (
+    echo [EXITOSO] Gradle 9.0.0 se ha instalado correctamente
+    echo [INFO] GRADLE_HOME configurado en: %gradle_install%
+    echo [INFO] Gradle agregado al PATH del sistema
+    echo [INFO] Reinicie su terminal para usar los comandos de Gradle
+    echo [INFO] Puede verificar la instalacion con: gradle --version
+) else (
+    echo ERROR: La instalacion de Gradle parece haber fallado
+    echo El comando 'gradle --version' no funciona correctamente
+    set /a error_count+=1
+)
+
+:cleanup_gradle
+echo.
+echo Limpiando archivos temporales...
+if exist "%gradle_zip%" del "%gradle_zip%" >nul 2>&1
+if exist "%gradle_extract%" rmdir /s /q "%gradle_extract%" >nul 2>&1
 
 echo [INFO] Limpieza completada
 
