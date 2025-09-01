@@ -1748,12 +1748,28 @@ echo.
 echo Ejecutando instalacion silenciosa de Office 365 32-bits...
 echo [INFO] Esto puede tomar varios minutos, por favor espere...
 
-:: Instalar Office 365 de manera silenciosa
-start /wait "%office365_exe%" /quiet /norestart
+:: Instalar Office 365 de manera silenciosa - probando diferentes parametros
+echo Intentando instalacion con parametros silenciosos...
+start /wait "%office365_exe%" /silent
+set install_result=!errorlevel!
 
-if !errorlevel! neq 0 (
-    echo ERROR: Fallo en la instalacion de Office 365 32-bits
-    echo Codigo de error: !errorlevel!
+if !install_result! neq 0 (
+    echo Primer intento fallo ^(codigo: !install_result!^), probando con /S...
+    start /wait "%office365_exe%" /S
+    set install_result=!errorlevel!
+)
+
+if !install_result! neq 0 (
+    echo Segundo intento fallo ^(codigo: !install_result!^), probando sin parametros...
+    start /wait "%office365_exe%"
+    set install_result=!errorlevel!
+)
+
+if !install_result! neq 0 (
+    echo ERROR: Fallo en la instalacion de Office 365 32-bits con todos los parametros
+    echo Codigo de error final: !install_result!
+    echo.
+    echo NOTA: El modificador "/quiet" no es valido para este instalador
     echo.
     echo POSIBLES SOLUCIONES:
     echo 1. Ejecute el script como administrador
