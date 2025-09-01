@@ -1748,40 +1748,58 @@ echo.
 echo Ejecutando instalacion silenciosa de Office 365 32-bits...
 echo [INFO] Esto puede tomar varios minutos, por favor espere...
 
-:: Instalar Office 365 de manera silenciosa - probando diferentes parametros
-echo Intentando instalacion con parametros silenciosos...
-start /wait "%office365_exe%" /silent
+:: Office Click-to-Run usa parametros especificos
+echo Intentando instalacion con parametros de Office Click-to-Run...
+
+:: Metodo 1: Sin parametros (instalacion automatica)
+echo Probando instalacion automatica sin parametros...
+start /wait "%office365_exe%"
 set install_result=!errorlevel!
 
 if !install_result! neq 0 (
-    echo Primer intento fallo ^(codigo: !install_result!^), probando con /S...
-    start /wait "%office365_exe%" /S
+    echo Primer intento fallo ^(codigo: !install_result!^), probando con /configure...
+    
+    :: Crear archivo de configuracion temporal para instalacion silenciosa
+    echo ^<?xml version="1.0" encoding="UTF-8"?^> > "%temp%\office_config.xml"
+    echo ^<Configuration^> >> "%temp%\office_config.xml"
+    echo   ^<Add OfficeClientEdition="32" Channel="Current"^> >> "%temp%\office_config.xml"
+    echo     ^<Product ID="O365ProPlusRetail"^> >> "%temp%\office_config.xml"
+    echo       ^<Language ID="es-es" /^> >> "%temp%\office_config.xml"
+    echo     ^</Product^> >> "%temp%\office_config.xml"
+    echo   ^</Add^> >> "%temp%\office_config.xml"
+    echo   ^<Display Level="None" AcceptEULA="TRUE" /^> >> "%temp%\office_config.xml"
+    echo ^</Configuration^> >> "%temp%\office_config.xml"
+    
+    start /wait "%office365_exe%" /configure "%temp%\office_config.xml"
     set install_result=!errorlevel!
+    
+    if exist "%temp%\office_config.xml" del "%temp%\office_config.xml"
 )
 
 if !install_result! neq 0 (
-    echo Segundo intento fallo ^(codigo: !install_result!^), probando sin parametros...
-    start /wait "%office365_exe%"
-    set install_result=!errorlevel!
-)
-
-if !install_result! neq 0 (
-    echo ERROR: Fallo en la instalacion de Office 365 32-bits con todos los parametros
+    echo ERROR: Fallo en la instalacion de Office 365 32-bits con todos los metodos
     echo Codigo de error final: !install_result!
     echo.
-    echo NOTA: El modificador "/quiet" no es valido para este instalador
+    echo NOTA: Este instalador de Office Click-to-Run no acepta parametros tradicionales como "/quiet" o "/silent"
+    echo.
+    echo METODOS INTENTADOS:
+    echo 1. Instalacion automatica sin parametros
+    echo 2. Instalacion con archivo de configuracion XML
     echo.
     echo POSIBLES SOLUCIONES:
     echo 1. Ejecute el script como administrador
-    echo 2. Verifique que tenga suficiente espacio en disco
-    echo 3. Cierre otras aplicaciones que puedan interferir
+    echo 2. Verifique que tenga suficiente espacio en disco (minimo 4GB)
+    echo 3. Cierre otras aplicaciones de Office que puedan interferir
     echo 4. Desinstale versiones previas de Office antes de continuar
-    echo 5. Intente instalar manualmente desde: %office365_exe%
+    echo 5. Verifique conexion a internet (Office se descarga durante instalacion)
+    echo 6. Intente instalar manualmente desde: %office365_exe%
     set /a error_count+=1
-) else (
-    echo [EXITOSO] Office 365 32-bits se ha instalado correctamente
-    echo [INFO] Verifique el menu de inicio para acceder a las aplicaciones de Office
-    echo [INFO] Las aplicaciones deberian estar disponibles en unos minutos
+ else (
+    echo [EXITOSO] Office 365 32-bits se ha iniciado correctamente
+    echo [INFO] Office Click-to-Run continuara la instalacion en segundo plano
+    echo [INFO] Las aplicaciones estaran disponibles cuando termine la descarga e instalacion
+    echo [INFO] Verifique el menu de inicio en unos minutos para acceder a las aplicaciones
+    echo [INFO] El proceso puede tomar entre 10-30 minutos dependiendo de su conexion
 )
 
 :cleanup_office365
