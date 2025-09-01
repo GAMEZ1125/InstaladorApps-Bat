@@ -103,6 +103,7 @@ set apps[71]=OfimaBot
 set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
+set apps[75]=HelpDesk_Xelerica
 
 
 :menu
@@ -123,13 +124,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 74 (
+            if %%j leq 75 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 74 (
+            if %%j leq 75 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -171,7 +172,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-74"
+    set "selected=1-75"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -310,6 +311,8 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1250,7 +1253,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,71) do (
+for /l %%i in (1,1,75) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -1468,6 +1471,8 @@ for %%a in (!applications!) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1931,6 +1936,191 @@ if exist "%gradle_zip%" del "%gradle_zip%" >nul 2>&1
 if exist "%gradle_extract%" rmdir /s /q "%gradle_extract%" >nul 2>&1
 
 echo [INFO] Limpieza completada
+
+endlocal
+goto :eof
+
+:install_helpdesk_xelerica
+setlocal enabledelayedexpansion
+
+echo.
+echo ===============================================
+echo       INSTALACION DE HELPDESK XELERICA
+echo ===============================================
+echo.
+
+:: URL del icono y enlace
+set "icon_url=https://www.xelerica.com/assets/images/icono.ico"
+set "shortcut_url=https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%%2Fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4"
+set "shortcut_name=HelpDesk Xelerica"
+set "icon_file=%temp%\xelerica_icon.ico"
+
+:: Obtener lista de usuarios
+echo Usuarios disponibles en el sistema:
+echo -----------------------------------
+set "user_count=0"
+
+for /d %%u in ("C:\Users\*") do (
+    set "username=%%~nu"
+    if /i not "!username!"=="Public" (
+        if /i not "!username!"=="Default" (
+            if /i not "!username!"=="All Users" (
+                if /i not "!username!"=="Default User" (
+                    set /a user_count+=1
+                    set "user_!user_count!=!username!"
+                    echo  !user_count!. !username!
+                )
+            )
+        )
+    )
+)
+
+if !user_count! equ 0 (
+    echo ERROR: No se encontraron usuarios en el sistema.
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+echo.
+set /p "user_selection=Seleccione el numero del usuario (1-!user_count!): "
+
+:: Validar selección
+set "selected_user="
+if "!user_selection!"=="1" set "selected_user=!user_1!"
+if "!user_selection!"=="2" set "selected_user=!user_2!"
+if "!user_selection!"=="3" set "selected_user=!user_3!"
+if "!user_selection!"=="4" set "selected_user=!user_4!"
+if "!user_selection!"=="5" set "selected_user=!user_5!"
+if "!user_selection!"=="6" set "selected_user=!user_6!"
+if "!user_selection!"=="7" set "selected_user=!user_7!"
+if "!user_selection!"=="8" set "selected_user=!user_8!"
+
+if not defined selected_user (
+    echo ERROR: Seleccion invalida.
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+echo.
+echo Usuario seleccionado: !selected_user!
+echo.
+
+:: Determinar ruta del escritorio
+set "user_profile=C:\Users\!selected_user!"
+set "desktop_path="
+
+:: Verificar si existe OneDrive y si el escritorio esta ahi
+set "onedrive_desktop=!user_profile!\OneDrive\Desktop"
+set "local_desktop=!user_profile!\Desktop"
+
+if exist "!onedrive_desktop!" (
+    echo [INFO] Escritorio de OneDrive encontrado: !onedrive_desktop!
+    set "desktop_path=!onedrive_desktop!"
+) else if exist "!local_desktop!" (
+    echo [INFO] Escritorio local encontrado: !local_desktop!
+    set "desktop_path=!local_desktop!"
+) else (
+    echo ERROR: No se pudo encontrar la carpeta del escritorio para el usuario !selected_user!
+    echo Rutas verificadas:
+    echo - !onedrive_desktop!
+    echo - !local_desktop!
+    set /a error_count+=1
+    endlocal
+    goto :eof
+)
+
+echo Ruta del escritorio: !desktop_path!
+echo.
+
+:: Descargar icono
+echo Descargando icono de Xelerica...
+powershell -Command "try { Invoke-WebRequest -Uri '%icon_url%' -OutFile '%icon_file%' -UseBasicParsing } catch { Write-Host 'Error en descarga del icono' }"
+
+if not exist "%icon_file%" (
+    echo ADVERTENCIA: No se pudo descargar el icono. Se creara el acceso directo sin icono.
+    set "icon_file="
+) else (
+    echo [EXITOSO] Icono descargado correctamente
+)
+
+:: Crear acceso directo usando PowerShell
+echo Creando acceso directo en el escritorio...
+
+set "shortcut_file=!desktop_path!\%shortcut_name%.lnk"
+
+:: Script de PowerShell para crear el acceso directo
+echo $WshShell = New-Object -comObject WScript.Shell > "%temp%\create_shortcut.ps1"
+echo $Shortcut = $WshShell.CreateShortcut^("!shortcut_file!"^) >> "%temp%\create_shortcut.ps1"
+echo $Shortcut.TargetPath = "cmd.exe" >> "%temp%\create_shortcut.ps1"
+echo $Shortcut.Arguments = "/c start `"`" `"%shortcut_url%`"" >> "%temp%\create_shortcut.ps1"
+echo $Shortcut.Description = "Acceso directo a HelpDesk Xelerica" >> "%temp%\create_shortcut.ps1"
+echo $Shortcut.WindowStyle = 7 >> "%temp%\create_shortcut.ps1"
+if defined icon_file (
+    echo $Shortcut.IconLocation = "%icon_file%" >> "%temp%\create_shortcut.ps1"
+)
+echo $Shortcut.Save^(^) >> "%temp%\create_shortcut.ps1"
+
+:: Ejecutar el script de PowerShell
+powershell -ExecutionPolicy Bypass -File "%temp%\create_shortcut.ps1"
+set "shortcut_result=!errorlevel!"
+
+:: Limpiar archivo temporal
+if exist "%temp%\create_shortcut.ps1" del "%temp%\create_shortcut.ps1"
+
+if !shortcut_result! neq 0 (
+    echo ERROR: No se pudo crear el acceso directo
+    set /a error_count+=1
+) else (
+    echo [EXITOSO] Acceso directo creado correctamente
+    echo Ubicacion: !shortcut_file!
+)
+
+:: Copiar icono al perfil del usuario para mantenerlo permanente
+if defined icon_file (
+    set "user_icon_path=!user_profile!\AppData\Local\xelerica_icon.ico"
+    copy "%icon_file%" "!user_icon_path!" >nul 2>&1
+    if exist "!user_icon_path!" (
+        echo [INFO] Icono copiado al perfil del usuario para mantenerlo permanente
+        
+        :: Actualizar el acceso directo para usar el icono permanente
+        echo $WshShell = New-Object -comObject WScript.Shell > "%temp%\update_shortcut.ps1"
+        echo $Shortcut = $WshShell.CreateShortcut^("!shortcut_file!"^) >> "%temp%\update_shortcut.ps1"
+        echo $Shortcut.IconLocation = "!user_icon_path!" >> "%temp%\update_shortcut.ps1"
+        echo $Shortcut.Save^(^) >> "%temp%\update_shortcut.ps1"
+        
+        powershell -ExecutionPolicy Bypass -File "%temp%\update_shortcut.ps1"
+        if exist "%temp%\update_shortcut.ps1" del "%temp%\update_shortcut.ps1"
+        
+        echo [INFO] Acceso directo actualizado con icono permanente
+    )
+)
+
+echo.
+echo ===============================================
+echo                   RESUMEN
+echo ===============================================
+echo Usuario seleccionado: !selected_user!
+echo Escritorio utilizado: !desktop_path!
+echo Acceso directo: !shortcut_file!
+if defined icon_file (
+    echo Icono utilizado: Si
+) else (
+    echo Icono utilizado: No
+)
+echo URL de destino: %shortcut_url%
+echo Fecha y hora: %DATE% %TIME%
+echo Equipo: %COMPUTERNAME%
+echo Ejecutado por: %USERNAME%
+echo ===============================================
+echo.
+echo [INFO] El acceso directo "HelpDesk Xelerica" ha sido creado
+echo [INFO] Al hacer clic abrira el navegador con el sistema de tickets
+echo [INFO] Puede mover o eliminar el acceso directo si lo desea
+
+:: Limpiar archivos temporales
+if exist "%icon_file%" del "%icon_file%"
 
 endlocal
 goto :eof
