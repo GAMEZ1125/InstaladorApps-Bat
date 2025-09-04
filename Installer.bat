@@ -1962,24 +1962,70 @@ set "user_count=0"
 
 for /d %%u in ("C:\Users\*") do (
     set "username=%%~nu"
-    if /i not "!username!"=="Public" (
-        if /i not "!username!"=="Default" (
-            if /i not "!username!"=="All Users" (
-                if /i not "!username!"=="Default User" (
-                    set /a user_count+=1
-                    set "user_!user_count!=!username!"
-                    echo  !user_count!. !username!
-                )
-            )
+    set "valid_user=1"
+    
+    :: Excluir usuarios del sistema y carpetas especiales
+    if /i "!username!"=="Public" set "valid_user=0"
+    if /i "!username!"=="Default" set "valid_user=0"
+    if /i "!username!"=="All Users" set "valid_user=0"
+    if /i "!username!"=="Default User" set "valid_user=0"
+    if /i "!username!"=="DefaultAppPool" set "valid_user=0"
+    if /i "!username!"=="Administrator" set "valid_user=0"
+    
+    :: Verificar que tenga una carpeta Desktop o Documents (indicador de usuario real)
+    if "!valid_user!"=="1" (
+        if exist "C:\Users\!username!\Desktop" (
+            set "has_desktop=1"
+        ) else if exist "C:\Users\!username!\OneDrive\Desktop" (
+            set "has_desktop=1"
+        ) else if exist "C:\Users\!username!\Documents" (
+            set "has_desktop=1"
+        ) else (
+            set "valid_user=0"
         )
+    )
+    
+    :: Excluir nombres muy cortos que probablemente no sean usuarios reales
+    if "!valid_user!"=="1" (
+        :: Metodo simple para verificar longitud minima
+        if "!username:~2,1!"=="" set "valid_user=0"
+    )
+    
+    if "!valid_user!"=="1" (
+        set /a user_count+=1
+        set "user_!user_count!=!username!"
+        echo  !user_count!. !username!
     )
 )
 
 if !user_count! equ 0 (
-    echo ERROR: No se encontraron usuarios en el sistema.
-    set /a error_count+=1
-    endlocal
-    goto :eof
+    echo ADVERTENCIA: No se encontraron usuarios regulares en el sistema.
+    echo.
+    echo Mostrando todos los usuarios disponibles (incluyendo sistema):
+    echo -----------------------------------------------------------
+    set "user_count=0"
+    
+    for /d %%u in ("C:\Users\*") do (
+        set "username=%%~nu"
+        if /i not "!username!"=="Public" (
+            if /i not "!username!"=="Default" (
+                if /i not "!username!"=="All Users" (
+                    if /i not "!username!"=="Default User" (
+                        set /a user_count+=1
+                        set "user_!user_count!=!username!"
+                        echo  !user_count!. !username!
+                    )
+                )
+            )
+        )
+    )
+    
+    if !user_count! equ 0 (
+        echo ERROR: No se encontraron usuarios en el sistema.
+        set /a error_count+=1
+        endlocal
+        goto :eof
+    )
 )
 
 echo.
@@ -1995,6 +2041,15 @@ if "!user_selection!"=="5" set "selected_user=!user_5!"
 if "!user_selection!"=="6" set "selected_user=!user_6!"
 if "!user_selection!"=="7" set "selected_user=!user_7!"
 if "!user_selection!"=="8" set "selected_user=!user_8!"
+if "!user_selection!"=="9" set "selected_user=!user_9!"
+if "!user_selection!"=="10" set "selected_user=!user_10!"
+
+:: Verificar que la seleccion sea valida
+if not defined selected_user (
+    if !user_selection! gtr 0 if !user_selection! leq !user_count! (
+        call set "selected_user=%%user_!user_selection!%%"
+    )
+)
 
 if not defined selected_user (
     echo ERROR: Seleccion invalida.
@@ -2022,13 +2077,23 @@ if exist "!onedrive_desktop!" (
     echo [INFO] Escritorio local encontrado: !local_desktop!
     set "desktop_path=!local_desktop!"
 ) else (
-    echo ERROR: No se pudo encontrar la carpeta del escritorio para el usuario !selected_user!
+    echo ADVERTENCIA: No se encontro carpeta de escritorio para el usuario !selected_user!
     echo Rutas verificadas:
     echo - !onedrive_desktop!
     echo - !local_desktop!
-    set /a error_count+=1
-    endlocal
-    goto :eof
+    echo.
+    echo Intentando crear carpeta Desktop local...
+    mkdir "!local_desktop!" 2>nul
+    if exist "!local_desktop!" (
+        echo [EXITOSO] Carpeta Desktop creada: !local_desktop!
+        set "desktop_path=!local_desktop!"
+    ) else (
+        echo ERROR: No se pudo crear la carpeta del escritorio
+        echo SOLUCION: Verifique que el usuario !selected_user! exista y tenga permisos
+        set /a error_count+=1
+        endlocal
+        goto :eof
+    )
 )
 
 echo Ruta del escritorio: !desktop_path!
