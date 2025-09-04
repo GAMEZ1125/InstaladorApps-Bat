@@ -1962,39 +1962,25 @@ set "user_count=0"
 
 for /d %%u in ("C:\Users\*") do (
     set "username=%%~nu"
-    set "valid_user=1"
     
-    :: Excluir usuarios del sistema y carpetas especiales
-    if /i "!username!"=="Public" set "valid_user=0"
-    if /i "!username!"=="Default" set "valid_user=0"
-    if /i "!username!"=="All Users" set "valid_user=0"
-    if /i "!username!"=="Default User" set "valid_user=0"
-    if /i "!username!"=="DefaultAppPool" set "valid_user=0"
-    if /i "!username!"=="Administrator" set "valid_user=0"
-    
-    :: Verificar que tenga una carpeta Desktop o Documents (indicador de usuario real)
-    if "!valid_user!"=="1" (
-        if exist "C:\Users\!username!\Desktop" (
-            set "has_desktop=1"
-        ) else if exist "C:\Users\!username!\OneDrive\Desktop" (
-            set "has_desktop=1"
-        ) else if exist "C:\Users\!username!\Documents" (
-            set "has_desktop=1"
-        ) else (
-            set "valid_user=0"
+    :: Lista simple de exclusiones
+    if not "!username!"=="Public" (
+        if not "!username!"=="Default" (
+            if not "!username!"=="All Users" (
+                if not "!username!"=="Default User" (
+                    if not "!username!"=="DefaultAppPool" (
+                        if not "!username!"=="Administrator" (
+                            :: Verificar que no sea muy corto
+                            if not "!username:~2,1!"=="" (
+                                set /a user_count+=1
+                                set "user_!user_count!=!username!"
+                                echo  !user_count!. !username!
+                            )
+                        )
+                    )
+                )
+            )
         )
-    )
-    
-    :: Excluir nombres muy cortos que probablemente no sean usuarios reales
-    if "!valid_user!"=="1" (
-        :: Metodo simple para verificar longitud minima
-        if "!username:~2,1!"=="" set "valid_user=0"
-    )
-    
-    if "!valid_user!"=="1" (
-        set /a user_count+=1
-        set "user_!user_count!=!username!"
-        echo  !user_count!. !username!
     )
 )
 
