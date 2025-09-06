@@ -2128,11 +2128,17 @@ if not exist "%anydesk_exe%" (
     endlocal & goto :eof
 )
 for %%F in ("%anydesk_exe%") do set file_size=%%~zF
-if %file_size% lss 500000 (
-    echo ERROR: Archivo AnyDesk demasiado pequeño (%file_size% bytes). Posible descarga fallida.
-    del "%anydesk_exe%" >nul 2>&1
-    set /a error_count+=1
-    endlocal & goto :eof
+:: Usar expansion retardada para evitar errores de parseo
+if not defined file_size (
+    echo ADVERTENCIA: No se pudo obtener el tamano del archivo. Continuando...
+) else (
+    echo Tamano descargado: !file_size! bytes
+    if !file_size! LSS 500000 (
+        echo ERROR: Archivo AnyDesk demasiado pequeno (!file_size! bytes). Posible descarga fallida.
+        del "%anydesk_exe%" >nul 2>&1
+        set /a error_count+=1
+        endlocal & goto :eof
+    )
 )
 echo Ejecutando instalacion silenciosa...
 start "" /wait "%anydesk_exe%" --install "C:\Program Files\AnyDesk" --silent --create-shortcuts=desktop,startmenu --start-with-win=1 --update-auto=1
