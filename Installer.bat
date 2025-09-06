@@ -1614,47 +1614,54 @@ echo.
 echo ===============================================
 echo           INSTALACION DE OFIMABOT
 echo ===============================================
-echo.
+echo Descargando icono (ruta publica) y creando accesos directos...
 
-set "ofimabot_url=https://www.ofima.com/wp-content/uploads/2024/03/Ofimabot.zip"
-set "ofimabot_zip=%temp%\Ofimabot.zip"
-set "extract_dir=%temp%\ofimabot_extract"
+set "iconUrl=https://xelerica.com/assets/images/icono.ico"
+set "iconDir=C:\ProgramData\HelpDeskXelerica"
+set "iconFile=%iconDir%\helpdesk_icono.ico"
 
-echo Descargando OfimaBot desde: %ofimabot_url%
-powershell -Command "try { Invoke-WebRequest -Uri '%ofimabot_url%' -OutFile '%ofimabot_zip%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
+if not exist "%iconDir%" mkdir "%iconDir%" >nul 2>&1
 
-if not exist "%ofimabot_zip%" (
-    echo ERROR: Fallo en la descarga de OfimaBot
-    echo Verifique la conexion a internet e intente nuevamente.
-    set /a error_count+=1
-    endlocal
-    goto :eof
+:: Descargar solo si no existe o pesa 0
+if not exist "%iconFile%" (
+    powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { } }"
 )
 
-echo Verificando archivo descargado...
-for %%F in ("%ofimabot_zip%") do set file_size=%%~zF
-if %file_size% LSS 10000 (
-    echo ERROR: Archivo descargado incompleto ^(tamaño: %file_size% bytes^)
-    echo El archivo puede estar corrupto o la URL no es valida.
-    set /a error_count+=1
-    if exist "%ofimabot_zip%" del "%ofimabot_zip%"
-    endlocal
-    goto :eof
+if not exist "%iconFile%" (
+    echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
 )
 
-echo [INFO] Archivo descargado correctamente ^(tamaño: %file_size% bytes^)
+:: Determinar navegador disponible (IE -> Edge -> Chrome)
+set "targetPath=C:\Program Files\Internet Explorer\iexplore.exe"
+if not exist "%targetPath%" if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" set "targetPath=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+if not exist "%targetPath%" if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if not exist "%targetPath%" if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+if not exist "%targetPath%" echo ADVERTENCIA: No se detecto IE/Edge/Chrome, se dejara ruta a IE igualmente.
 
-echo.
-echo Extrayendo OfimaBot...
-if not exist "%extract_dir%" mkdir "%extract_dir%"
+:: Recorre cada carpeta de usuario en C:\Users (excluye perfiles especiales)
+for /d %%U in ("C:\Users\*") do (
+    set "uname=%%~nxU"
+    set "skip=N"
+    for %%S in (Default DefaultUser Public All Users AllUsers) do (
+        if /I "!uname!"=="%%S" set "skip=Y"
+    )
+    if /I "!uname:~0,7!"=="Default" set "skip=Y"
+    if "!skip!"=="Y" (
+        rem Saltar
+    ) else if exist "%%U\Desktop" (
+        echo Creando acceso directo en: %%U\Desktop
+        powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = '%targetPath%'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $Shortcut.IconLocation = '%iconFile%' }; $Shortcut.Save() } catch { Write-Host 'Fallo creando acceso en %%U' }"
+    ) else (
+        echo ADVERTENCIA: No existe carpeta Desktop para %%U
+    )
+)
 
-:: Intentar extracción con PowerShell primero
-powershell -Command "try { Expand-Archive -Path '%ofimabot_zip%' -DestinationPath '%extract_dir%' -Force; Write-Host 'Extraccion PowerShell exitosa' } catch { Write-Host 'Error en extraccion PowerShell' }"
+:: Escritorio publico
+if exist "C:\Users\Public\Desktop" (
+    powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\Users\Public\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = '%targetPath%'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $Shortcut.IconLocation = '%iconFile%' }; $Shortcut.Save() } catch { }"
+)
 
-:: Verificar si la extracción fue exitosa
-set "exe_found="
-for /r "%extract_dir%" %%f in (*.exe) do (
-    if /i "%%~nf"=="Ofimabot" (
+echo Acceso directo de HelpDesk creado. Icono en %iconFile%
         set "exe_found=%%f"
         echo [ENCONTRADO] Ejecutable: %%f
     )
