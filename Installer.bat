@@ -103,8 +103,6 @@ set apps[71]=OfimaBot
 set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
-set apps[75]=Acceso_Directo_Helpdesk_Xelerica
-set apps[75]=Acceso_Directo_Helpdesk_Xelerica
 
 
 :menu
@@ -227,7 +225,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 38-75)
+:: Mostrar menu en dos columnas (1-37 y 36-74)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -236,13 +234,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 75 (
+            if %%j leq 74 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 75 (
+            if %%j leq 74 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -284,7 +282,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-75"
+    set "selected=1-74"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -423,8 +421,6 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
-    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
-        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -871,78 +867,6 @@ echo %resultadoEliminacion%
 echo --------------------------------------------------------
 endlocal
 goto :eof
-
-:install_helpdesk_xelerica_all
-setlocal EnableDelayedExpansion
-echo ==================================================
-echo Creando acceso directo HelpDesk Xelerica para TODOS los usuarios...
-echo URL destino: https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4
-
-set "URL=https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4"
-set "ICON_URL=https://xelerica.com/assets/images/icono.ico"
-set "ICON_FILE=%temp%\helpdesk_xelerica.ico"
-
-if not exist "%ICON_FILE%" (
-    echo Descargando icono...
-    powershell -Command "try { Invoke-WebRequest -Uri '%ICON_URL%' -OutFile '%ICON_FILE%' -UseBasicParsing } catch { exit 1 }" >nul 2>&1
-    if !errorlevel! neq 0 (
-        echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
-    ) else (
-        echo Icono descargado correctamente.
-    )
-)
-
-set "USERS_DIR=C:\Users"
-if not exist "%USERS_DIR%" (
-    echo ERROR: No existe %USERS_DIR%
-    endlocal & set /a error_count+=1 & goto :eof
-)
-
-set /a created_count=0
-set /a failed_count=0
-
-for /d %%U in ("%USERS_DIR%\*") do (
-    set "_prof=%%~nxU"
-    set "_skip="
-    for %%S in (Public Default Default User DefaultAccount All Users All_Users Administrator Administrator.TEMP DefaultAppPool) do (
-        if /i "!_prof!"=="%%S" set "_skip=1"
-    )
-    if defined _skip (
-        rem Omitir perfiles de sistema
-    ) else (
-        set "DESK1=%%U\OneDrive\Desktop"
-        set "DESK2=%%U\Desktop"
-        set "TARGET_DESK="
-        if exist "!DESK1!" (set "TARGET_DESK=!DESK1!")
-        if not defined TARGET_DESK if exist "!DESK2!" (set "TARGET_DESK=!DESK2!")
-        if not defined TARGET_DESK (
-            set "TARGET_DESK=!DESK2!"
-            mkdir "!TARGET_DESK!" >nul 2>&1
-        )
-        if exist "!TARGET_DESK!" (
-            set "LNK_FILE=!TARGET_DESK!\HelpDesk Xelerica.lnk"
-            rem Crear acceso directo mediante PowerShell
-            powershell -Command "try { $W=New-Object -ComObject WScript.Shell; $S=$W.CreateShortcut(\"'!LNK_FILE!'\"); $S.TargetPath=\"cmd.exe\"; $S.Arguments=\"/c start '' '!URL!'\"; $S.WorkingDirectory=\"C:\\Windows\\System32\"; if (Test-Path \"'%ICON_FILE%'\") { $S.IconLocation=\"'%ICON_FILE%'\" }; $S.Save() } catch { exit 1 }" >nul 2>&1
-            if !errorlevel! equ 0 (
-                echo [OK] Creado en !TARGET_DESK! (^!_prof!^)
-                set /a created_count+=1
-            ) else (
-                echo [ERROR] No se pudo crear en !TARGET_DESK! (^!_prof!^)
-                set /a failed_count+=1
-            )
-        ) else (
-            echo [ERROR] No existe escritorio para !_prof!
-            set /a failed_count+=1
-        )
-    )
-)
-
-echo --------------------------------------------------
-echo Atajos creados: !created_count!
-echo Fallidos: !failed_count!
-if !failed_count! gtr 0 set /a error_count+=!failed_count!
-echo Acceso directo HelpDesk Xelerica finalizado.
-endlocal & goto :eof
 
 :: Función para buscar winget
 :find_winget
@@ -1437,7 +1361,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,75) do (
+for /l %%i in (1,1,71) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -1655,8 +1579,6 @@ for %%a in (!applications!) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
-    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
-        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -2128,7 +2050,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 38-75)
+:: Mostrar menu en dos columnas (1-37 y 36-74)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -2137,13 +2059,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 75 (
+            if %%j leq 74 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 75 (
+            if %%j leq 74 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -2185,7 +2107,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-75"
+    set "selected=1-74"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -2324,8 +2246,6 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
-    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
-        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -3484,8 +3404,6 @@ for %%a in (!applications!) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
-    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
-        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
