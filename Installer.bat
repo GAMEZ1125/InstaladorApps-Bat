@@ -1864,7 +1864,8 @@ echo Intentando instalacion con parametros de Office Click-to-Run...
 
 :: Metodo 1: Sin parametros (instalacion automatica)
 echo Probando instalacion automatica sin parametros...
-start /wait "%office365_exe%"
+:: IMPORTANTE: siempre proveer un título vacío "" a START; de lo contrario la ruta se interpreta como título y no se ejecuta el exe
+start "" /wait "%office365_exe%"
 set install_result=!errorlevel!
 
 if !install_result! neq 0 (
@@ -1881,7 +1882,7 @@ if !install_result! neq 0 (
     echo   ^<Display Level="None" AcceptEULA="TRUE" /^> >> "%temp%\office_config.xml"
     echo ^</Configuration^> >> "%temp%\office_config.xml"
     
-    start /wait "%office365_exe%" /configure "%temp%\office_config.xml"
+    start "" /wait "%office365_exe%" /configure "%temp%\office_config.xml"
     set install_result=!errorlevel!
     
     if exist "%temp%\office_config.xml" del "%temp%\office_config.xml"
@@ -3689,7 +3690,8 @@ echo Intentando instalacion con parametros de Office Click-to-Run...
 
 :: Metodo 1: Sin parametros (instalacion automatica)
 echo Probando instalacion automatica sin parametros...
-start /wait "%office365_exe%"
+:: IMPORTANTE: siempre proveer un título vacío "" a START; de lo contrario la ruta se interpreta como título y no se ejecuta el exe
+start "" /wait "%office365_exe%"
 set install_result=!errorlevel!
 
 if !install_result! neq 0 (
@@ -3706,7 +3708,7 @@ if !install_result! neq 0 (
     echo   ^<Display Level="None" AcceptEULA="TRUE" /^> >> "%temp%\office_config.xml"
     echo ^</Configuration^> >> "%temp%\office_config.xml"
     
-    start /wait "%office365_exe%" /configure "%temp%\office_config.xml"
+    start "" /wait "%office365_exe%" /configure "%temp%\office_config.xml"
     set install_result=!errorlevel!
     
     if exist "%temp%\office_config.xml" del "%temp%\office_config.xml"
