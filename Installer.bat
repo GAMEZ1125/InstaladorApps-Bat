@@ -2085,7 +2085,7 @@ for /d %%U in ("C:\Users\*") do (
     ) else (
         if exist "%%U\Desktop" (
             echo Creando acceso directo en: %%U\Desktop
-            powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { Write-Host 'Fallo creando acceso en %%U' }"
+            powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { Write-Host 'Fallo creando acceso en %%U' }"
         ) else (
             echo ADVERTENCIA: No existe carpeta Desktop para %%U
         )
@@ -2094,7 +2094,7 @@ for /d %%U in ("C:\Users\*") do (
 
 :: Copia adicional al escritorio publico para futuros usuarios (si existe Public)
 if exist "C:\Users\Public\Desktop" (
-    powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\\Users\\Public\\Desktop\\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { }"
+    powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\\Users\\Public\\Desktop\\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { }"
 )
 
 echo Acceso directo de HelpDesk creado (si Internet Explorer no existe cambie TargetPath a msedge.exe manualmente).
