@@ -104,6 +104,7 @@ set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
 set apps[75]=HelpDesk_Xelerica
+set apps[76]=Anydesk_Atera
 
 
 :menu
@@ -216,6 +217,7 @@ set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
 set apps[75]=HelpDesk_Xelerica
+set apps[76]=Anydesk_Atera
 
 
 :menu
@@ -227,7 +229,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 38-75)
+:: Mostrar menu en dos columnas (1-37 y 38-76)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -236,13 +238,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 75 (
+            if %%j leq 76 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 75 (
+            if %%j leq 76 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -284,7 +286,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-75"
+    set "selected=1-76"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -425,6 +427,8 @@ for %%a in (%applications%) do (
         call :install_gradle_v9
     ) else if "%%a"=="HelpDesk_Xelerica" (
         call :install_helpdesk_xelerica
+    ) else if "%%a"=="Anydesk_Atera" (
+        call :install_anydesk_atera
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -2065,47 +2069,93 @@ echo ===============================================
 echo      CREACION ACCESO DIRECTO HELP DESK
 echo ===============================================
 echo.
-echo Descargando icono y creando acceso directo para todos los usuarios...
+echo Descargando icono (ruta publica) y creando accesos directos...
 
 set "iconUrl=https://xelerica.com/assets/images/icono.ico"
-set "tempIcon=%temp%\helpdesk_icono.ico"
+set "iconDir=C:\ProgramData\HelpDeskXelerica"
+set "iconFile=%iconDir%\helpdesk_icono.ico"
 
-:: Descargar icono (reintento simple)
-powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%tempIcon%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%tempIcon%' -UseBasicParsing } catch { } }"
-
-if not exist "%tempIcon%" (
-    echo ERROR: No se pudo descargar el icono del HelpDesk.
-    set /a error_count+=1
-    endlocal & goto :eof
+if not exist "%iconDir%" mkdir "%iconDir%" >nul 2>&1
+if not exist "%iconFile%" (
+    powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { } }"
 )
+if not exist "%iconFile%" echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
 
-:: Recorre cada carpeta de usuario en C:\Users (excluye Default*, Public, All Users)
+set "targetPath=C:\Program Files\Internet Explorer\iexplore.exe"
+if not exist "%targetPath%" if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" set "targetPath=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+if not exist "%targetPath%" if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if not exist "%targetPath%" if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+if not exist "%targetPath%" echo ADVERTENCIA: No se detecto IE/Edge/Chrome; se dejara ruta IE.
+
 for /d %%U in ("C:\Users\*") do (
     set "uname=%%~nxU"
     set "skip=N"
-    for %%S in (Default DefaultUser Public All Users AllUsers) do (
-        if /I "!uname!"=="%%S" set "skip=Y"
-    )
+    for %%S in (Default DefaultUser Public All Users AllUsers) do if /I "!uname!"=="%%S" set "skip=Y"
     if /I "!uname:~0,7!"=="Default" set "skip=Y"
     if "!skip!"=="Y" (
-        rem Saltar perfiles especiales
+        rem Saltar
+    ) else if exist "%%U\Desktop" (
+        echo Creando acceso directo en: %%U\Desktop
+        powershell -Command "try { $WshShell=New-Object -ComObject WScript.Shell; $sc=$WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $sc.TargetPath='%targetPath%'; $sc.Arguments='https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $sc.IconLocation='%iconFile%' }; $sc.Save() } catch { }"
     ) else (
-        if exist "%%U\Desktop" (
-            echo Creando acceso directo en: %%U\Desktop
-            powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { Write-Host 'Fallo creando acceso en %%U' }"
-        ) else (
-            echo ADVERTENCIA: No existe carpeta Desktop para %%U
-        )
+        echo ADVERTENCIA: No existe carpeta Desktop para %%U
     )
 )
 
-:: Copia adicional al escritorio publico para futuros usuarios (si existe Public)
 if exist "C:\Users\Public\Desktop" (
-    powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\\Users\\Public\\Desktop\\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { }"
+    powershell -Command "try { $WshShell=New-Object -ComObject WScript.Shell; $sc=$WshShell.CreateShortcut('C:\Users\Public\Desktop\HelpDeskSupport.lnk'); $sc.TargetPath='%targetPath%'; $sc.Arguments='https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $sc.IconLocation='%iconFile%' }; $sc.Save() } catch { }"
 )
 
-echo Acceso directo de HelpDesk creado (si Internet Explorer no existe cambie TargetPath a msedge.exe manualmente).
-if exist "%tempIcon%" del "%tempIcon%"
+echo Acceso directo de HelpDesk creado. Icono en %iconFile%
+endlocal
+goto :eof
+
+:install_anydesk_atera
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo      INSTALACION DE ANYDESK (CLIENT ATERA)
+echo ===============================================
+echo.
+set "anydesk_url=https://descargas-xelerica.netlify.app/assets/downloads/AnyDesk_Custom_Client_Atera.exe"
+set "anydesk_exe=%temp%\AnyDesk_Custom_Client_Atera.exe"
+
+echo Descargando AnyDesk custom desde: %anydesk_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%anydesk_url%' -OutFile '%anydesk_exe%' -UseBasicParsing } catch { Write-Host 'Error descarga' }"
+if not exist "%anydesk_exe%" (
+    echo ERROR: No se pudo descargar AnyDesk.
+    set /a error_count+=1
+    endlocal & goto :eof
+)
+for %%F in ("%anydesk_exe%") do set file_size=%%~zF
+if %file_size% lss 500000 (
+    echo ERROR: Archivo AnyDesk demasiado pequeño (%file_size% bytes). Posible descarga fallida.
+    del "%anydesk_exe%" >nul 2>&1
+    set /a error_count+=1
+    endlocal & goto :eof
+)
+echo Ejecutando instalacion silenciosa...
+start "" /wait "%anydesk_exe%" --install "C:\Program Files\AnyDesk" --silent --create-shortcuts=desktop,startmenu --start-with-win=1 --update-auto=1
+set install_code=!errorlevel!
+if !install_code! neq 0 (
+    echo Advertencia: instalacion con parametros fallo (codigo !install_code!). Intentando ejecucion simple...
+    start "" /wait "%anydesk_exe%"
+    set install_code=!errorlevel!
+)
+if !install_code! neq 0 (
+    echo ERROR: AnyDesk no pudo instalarse (codigo !install_code!).
+    set /a error_count+=1
+) else (
+    echo [EXITOSO] AnyDesk (Client Atera) instalado/desplegado.
+    if exist "C:\Program Files\AnyDesk\AnyDesk.exe" (
+        echo Ruta: C:\Program Files\AnyDesk\AnyDesk.exe
+    ) else if exist "%ProgramFiles(x86)%\AnyDesk\AnyDesk.exe" (
+        echo Ruta: %ProgramFiles(x86)%\AnyDesk\AnyDesk.exe
+    ) else (
+        echo Nota: Cliente portable; puede residir fuera de Program Files.
+    )
+)
+if exist "%anydesk_exe%" del "%anydesk_exe%"
 endlocal
 goto :eof
 
@@ -2170,7 +2220,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-75"
+    set "selected=1-76"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -2311,6 +2361,8 @@ for %%a in (%applications%) do (
         call :install_gradle_v9
     ) else if "%%a"=="HelpDesk_Xelerica" (
         call :install_helpdesk_xelerica
+    ) else if "%%a"=="Anydesk_Atera" (
+        call :install_anydesk_atera
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
