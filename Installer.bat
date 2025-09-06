@@ -103,6 +103,7 @@ set apps[71]=OfimaBot
 set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
+set apps[75]=HelpDesk_Xelerica
 
 
 :menu
@@ -214,6 +215,7 @@ set apps[71]=OfimaBot
 set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
+set apps[75]=HelpDesk_Xelerica
 
 
 :menu
@@ -225,7 +227,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 36-74)
+:: Mostrar menu en dos columnas (1-37 y 38-75)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -234,13 +236,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 74 (
+            if %%j leq 75 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 74 (
+            if %%j leq 75 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -282,7 +284,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-74"
+    set "selected=1-75"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -421,6 +423,8 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -2047,6 +2051,57 @@ echo [INFO] Limpieza completada
 endlocal
 goto :eof
 
+:install_helpdesk_xelerica
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo      CREACION ACCESO DIRECTO HELP DESK
+echo ===============================================
+echo.
+echo Descargando icono y creando acceso directo para todos los usuarios...
+
+set "iconUrl=https://xelerica.com/assets/images/icono.ico"
+set "tempIcon=%temp%\helpdesk_icono.ico"
+
+:: Descargar icono (reintento simple)
+powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%tempIcon%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%tempIcon%' -UseBasicParsing } catch { } }"
+
+if not exist "%tempIcon%" (
+    echo ERROR: No se pudo descargar el icono del HelpDesk.
+    set /a error_count+=1
+    endlocal & goto :eof
+)
+
+:: Recorre cada carpeta de usuario en C:\Users (excluye Default*, Public, All Users)
+for /d %%U in ("C:\Users\*") do (
+    set "uname=%%~nxU"
+    set "skip=N"
+    for %%S in (Default DefaultUser Public All Users AllUsers) do (
+        if /I "!uname!"=="%%S" set "skip=Y"
+    )
+    if /I "!uname:~0,7!"=="Default" set "skip=Y"
+    if "!skip!"=="Y" (
+        rem Saltar perfiles especiales
+    ) else (
+        if exist "%%U\Desktop" (
+            echo Creando acceso directo en: %%U\Desktop
+            powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { Write-Host 'Fallo creando acceso en %%U' }"
+        ) else (
+            echo ADVERTENCIA: No existe carpeta Desktop para %%U
+        )
+    )
+)
+
+:: Copia adicional al escritorio publico para futuros usuarios (si existe Public)
+if exist "C:\Users\Public\Desktop" (
+    powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\\Users\\Public\\Desktop\\HelpDeskSupport.lnk'); $Shortcut.TargetPath = 'C:\\Program Files\\Internet Explorer\\iexplore.exe'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4'; $Shortcut.IconLocation = '%tempIcon%'; $Shortcut.Save() } catch { }"
+)
+
+echo Acceso directo de HelpDesk creado (si Internet Explorer no existe cambie TargetPath a msedge.exe manualmente).
+if exist "%tempIcon%" del "%tempIcon%"
+endlocal
+goto :eof
+
 echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
@@ -2108,7 +2163,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-74"
+    set "selected=1-75"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -2247,6 +2302,8 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
