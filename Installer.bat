@@ -111,125 +111,12 @@ set apps[76]=Anydesk_Atera
 cls
 echo -------------------------------
 echo  INSTALADOR DE APLICACIONES V.2.0
-echo  Winget instalador de @echo off
-setlocal enabledelayedexpansion
-
-:: Función para encontrar winget automáticamente
-call :find_winget
-if not defined wingetPath (
-    echo ERROR: No se pudo encontrar winget en el sistema.
-    echo Verifique que Microsoft Store App Installer esté instalado.
-    pause
-    exit /b
-)
-
-echo Usando winget desde: %wingetPath%
-
-:: Administrar modo de ejecución
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Elevando permisos de administrador...
-    powershell Start-Process -Verb RunAs -FilePath "%comspec%" -ArgumentList '/c ""%~f0""'
-    exit /b
-)
-
-:: Verificar winget en ruta específica
-if not exist "%wingetPath%" (
-    echo ERROR: winget no encontrado en la ruta especificada.
-    echo Verifique que tenga instalada la versión 1.25.340 de App Installer
-    pause
-    exit /b
-)
-
-:: Lista de aplicaciones actualizada
-set apps[1]=JSFoundation.Appium
-set apps[2]=Google.Chrome
-set apps[3]=dbeaver.dbeaver
-set apps[4]=Mozilla.Firefox
-set apps[5]=Git.Git
-set apps[6]=OpenJS.NodeJS
-set apps[7]=Microsoft.VisualStudioCode
-set apps[8]=Postman.Postman
-set apps[9]=SmartBear.SoapUI
-set apps[10]=Vysor.Vysor
-set apps[11]=WinSCP.WinSCP
-set apps[12]=Notepad++.Notepad++
-set apps[13]=Oracle.JDK.21
-set apps[14]=JetBrains.IntelliJIDEA.Community
-set apps[15]=Microsoft.SqlServerManagementStudio
-set apps[16]=Amazon.Corretto.11.JDK
-set apps[17]=Amazon.Corretto.8.JDK
-set apps[18]=Amazon.Corretto.17.JDK
-set apps[19]=Python.Python.3.12
-set apps[20]=Amazon.AWSCLI
-set apps[21]=Google.AndroidStudio
-set apps[22]=ShareX.ShareX
-set apps[23]=Microsoft.VisualStudio.2022.BuildTools
-set apps[24]=MongoDB.Compass.Full
-set apps[25]=Microsoft.SQLServer.2022.Express
-set apps[26]=VideoLAN.VLC
-set apps[27]=Microsoft.Office
-set apps[28]=Microsoft.DotNet.Framework.DeveloperPack_4
-set apps[29]=Eraser.Eraser
-set apps[30]=Fortinet.FortiClientVPN
-set apps[31]=IBMiAccess_v1r1.zip
-set apps[32]=apache-maven-3.9.11-bin.zip
-set apps[33]=Gradle-8.13.zip
-set apps[34]=FusionInventory-Agent.exe
-set apps[35]=Amazon.WorkspacesClient
-set apps[36]=Adobe.Acrobat.Reader.64-bit
-set apps[37]=Microsoft.VisualStudio.2022.Community
-set apps[38]=DEVCOM.JMeter
-set apps[39]=jenkins.msi
-set apps[40]=MongoDB.Server
-set apps[41]=MongoDB.Shell
-set apps[42]=MongoDB.DatabaseTools
-set apps[43]=NoSQLBooster.NoSQLBooster
-set apps[44]=Gradle-8.5.zip
-set apps[45]=Elixir
-set apps[46]=Gradle-8.10.zip
-set apps[47]=Kubernetes.kubectl
-set apps[48]=tesseract-ocr.tesseract
-set apps[49]=Chocolatey.Chocolatey
-set apps[50]=FVM
-set apps[51]=UltraVNC_1436
-set apps[52]=Microsoft.Sysinternals.SDelete
-set apps[53]=Microsoft.DesktopAppInstaller
-set apps[54]=Instalar_Winget
-set apps[55]=SaenzFety_Atera-SanDiego
-set apps[56]=SaenzFety_Atera-Access
-set apps[57]=SaenzFety_Atera-Comerciales_Externos
-set apps[58]=SaenzFety_Atera-CID
-set apps[59]=PL/SQL_Developer
-set apps[60]=Cisco_Secure_Client_v5.1.2.42
-set apps[61]=Gradle-8.14.3.zip
-set apps[62]=MongoDB-Compass
-set apps[63]=npm_appium
-set apps[64]=Gestion_Hosts
-set apps[65]=apache-jmeter-5.6.3.zip
-set apps[66]=mysql-connector-odbc-9.4.0-winx64.msi
-set apps[67]=mysql-connector-net-9.4.0.msi
-set apps[68]=Docker.DockerDesktop
-set apps[69]=Gestion_Certificados
-set apps[70]=Gestion_Adaptadores_de_Red
-set apps[71]=OfimaBot
-set apps[72]=UIPath
-set apps[73]=Office365_32bits
-set apps[74]=Gradle_v9.0.0
-set apps[75]=HelpDesk_Xelerica
-set apps[76]=Anydesk_Atera
-
-
-:menu
-cls
-echo -------------------------------
-echo  INSTALADOR DE APLICACIONES V.2.0
 echo  Winget instalador de aplicaciones
 echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 38-76)
+:: Mostrar menu en dos columnas (1-37 y 36-74)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -238,13 +125,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 76 (
+            if %%j leq 74 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 76 (
+            if %%j leq 74 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -1369,7 +1256,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,71) do (
+for /l %%i in (1,1,74) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -1618,54 +1505,47 @@ echo.
 echo ===============================================
 echo           INSTALACION DE OFIMABOT
 echo ===============================================
-echo Descargando icono (ruta publica) y creando accesos directos...
+echo.
 
-set "iconUrl=https://xelerica.com/assets/images/icono.ico"
-set "iconDir=C:\ProgramData\HelpDeskXelerica"
-set "iconFile=%iconDir%\helpdesk_icono.ico"
+set "ofimabot_url=https://www.ofima.com/wp-content/uploads/2024/03/Ofimabot.zip"
+set "ofimabot_zip=%temp%\Ofimabot.zip"
+set "extract_dir=%temp%\ofimabot_extract"
 
-if not exist "%iconDir%" mkdir "%iconDir%" >nul 2>&1
+echo Descargando OfimaBot desde: %ofimabot_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%ofimabot_url%' -OutFile '%ofimabot_zip%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
 
-:: Descargar solo si no existe o pesa 0
-if not exist "%iconFile%" (
-    powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { } }"
+if not exist "%ofimabot_zip%" (
+    echo ERROR: Fallo en la descarga de OfimaBot
+    echo Verifique la conexion a internet e intente nuevamente.
+    set /a error_count+=1
+    endlocal
+    goto :eof
 )
 
-if not exist "%iconFile%" (
-    echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
+echo Verificando archivo descargado...
+for %%F in ("%ofimabot_zip%") do set file_size=%%~zF
+if %file_size% LSS 10000 (
+    echo ERROR: Archivo descargado incompleto ^(tamaño: %file_size% bytes^)
+    echo El archivo puede estar corrupto o la URL no es valida.
+    set /a error_count+=1
+    if exist "%ofimabot_zip%" del "%ofimabot_zip%"
+    endlocal
+    goto :eof
 )
 
-:: Determinar navegador disponible (IE -> Edge -> Chrome)
-set "targetPath=C:\Program Files\Internet Explorer\iexplore.exe"
-if not exist "%targetPath%" if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" set "targetPath=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-if not exist "%targetPath%" if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if not exist "%targetPath%" if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-if not exist "%targetPath%" echo ADVERTENCIA: No se detecto IE/Edge/Chrome, se dejara ruta a IE igualmente.
+echo [INFO] Archivo descargado correctamente ^(tamaño: %file_size% bytes^)
 
-:: Recorre cada carpeta de usuario en C:\Users (excluye perfiles especiales)
-for /d %%U in ("C:\Users\*") do (
-    set "uname=%%~nxU"
-    set "skip=N"
-    for %%S in (Default DefaultUser Public All Users AllUsers) do (
-        if /I "!uname!"=="%%S" set "skip=Y"
-    )
-    if /I "!uname:~0,7!"=="Default" set "skip=Y"
-    if "!skip!"=="Y" (
-        rem Saltar
-    ) else if exist "%%U\Desktop" (
-        echo Creando acceso directo en: %%U\Desktop
-        powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = '%targetPath%'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $Shortcut.IconLocation = '%iconFile%' }; $Shortcut.Save() } catch { Write-Host 'Fallo creando acceso en %%U' }"
-    ) else (
-        echo ADVERTENCIA: No existe carpeta Desktop para %%U
-    )
-)
+echo.
+echo Extrayendo OfimaBot...
+if not exist "%extract_dir%" mkdir "%extract_dir%"
 
-:: Escritorio publico
-if exist "C:\Users\Public\Desktop" (
-    powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\Users\Public\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = '%targetPath%'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $Shortcut.IconLocation = '%iconFile%' }; $Shortcut.Save() } catch { }"
-)
+:: Intentar extracción con PowerShell primero
+powershell -Command "try { Expand-Archive -Path '%ofimabot_zip%' -DestinationPath '%extract_dir%' -Force; Write-Host 'Extraccion PowerShell exitosa' } catch { Write-Host 'Error en extraccion PowerShell' }"
 
-echo Acceso directo de HelpDesk creado. Icono en %iconFile%
+:: Verificar si la extracción fue exitosa
+set "exe_found="
+for /r "%extract_dir%" %%f in (*.exe) do (
+    if /i "%%~nf"=="Ofimabot" (
         set "exe_found=%%f"
         echo [ENCONTRADO] Ejecutable: %%f
     )
@@ -1751,7 +1631,7 @@ if !install_result! neq 0 (
 ) else (
     echo.
     echo ===============================================
-    echo    OFIMABOT INSTALADO CORRECTAMENTE
+       echo    OFIMABOT INSTALADO CORRECTAMENTE
     echo ===============================================
     echo [EXITOSO] OfimaBot se ha instalado silenciosamente
     echo [INFO] Verifique el menu de inicio o escritorio para acceder a OfimaBot
@@ -2127,29 +2007,32 @@ if not exist "%anydesk_exe%" (
     set /a error_count+=1
     endlocal & goto :eof
 )
-for %%F in ("%anydesk_exe%") do set file_size=%%~zF
-:: Usar expansion retardada para evitar errores de parseo
-if not defined file_size (
-    echo ADVERTENCIA: No se pudo obtener el tamano del archivo. Continuando...
+
+:: Validar tamaño del archivo descargado
+set "file_size="
+for %%F in ("%anydesk_exe%") do set "file_size=%%~zF"
+if "!file_size!"=="" (
+    echo ADVERTENCIA: No se pudo obtener el tamaño del archivo. Continuando...
 ) else (
-    echo Tamano descargado: !file_size! bytes
+    echo Tamaño descargado: !file_size! bytes
     if !file_size! LSS 500000 (
-        echo ERROR: Archivo AnyDesk demasiado pequeno (!file_size! bytes). Posible descarga fallida.
+        echo ERROR: Archivo AnyDesk demasiado pequeño (!file_size! bytes). Posible descarga fallida.
         del "%anydesk_exe%" >nul 2>&1
         set /a error_count+=1
         endlocal & goto :eof
     )
 )
-echo Ejecutando instalacion silenciosa...
+
+echo Ejecutando instalación silenciosa...
 start "" /wait "%anydesk_exe%" --install "C:\Program Files\AnyDesk" --silent --create-shortcuts=desktop,startmenu --start-with-win=1 --update-auto=1
-set install_code=!errorlevel!
+set "install_code=!errorlevel!"
 if !install_code! neq 0 (
-    echo Advertencia: instalacion con parametros fallo (codigo !install_code!). Intentando ejecucion simple...
+    echo Advertencia: instalación con parámetros falló (código !install_code!). Intentando ejecución simple...
     start "" /wait "%anydesk_exe%"
-    set install_code=!errorlevel!
+    set "install_code=!errorlevel!"
 )
 if !install_code! neq 0 (
-    echo ERROR: AnyDesk no pudo instalarse (codigo !install_code!).
+    echo ERROR: AnyDesk no pudo instalarse (código !install_code!).
     set /a error_count+=1
 ) else (
     echo [EXITOSO] AnyDesk (Client Atera) instalado/desplegado.
@@ -2365,10 +2248,6 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
-    ) else if "%%a"=="HelpDesk_Xelerica" (
-        call :install_helpdesk_xelerica
-    ) else if "%%a"=="Anydesk_Atera" (
-        call :install_anydesk_atera
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -3992,5 +3871,111 @@ if exist "%gradle_extract%" rmdir /s /q "%gradle_extract%" >nul 2>&1
 
 echo [INFO] Limpieza completada
 
+endlocal
+goto :eof
+
+:install_helpdesk_xelerica
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo      CREACION ACCESO DIRECTO HELP DESK
+echo ===============================================
+echo.
+echo Descargando icono (ruta publica) y creando accesos directos...
+
+set "iconUrl=https://xelerica.com/assets/images/icono.ico"
+set "iconDir=C:\ProgramData\HelpDeskXelerica"
+set "iconFile=%iconDir%\helpdesk_icono.ico"
+
+if not exist "%iconDir%" mkdir "%iconDir%" >nul 2>&1
+if not exist "%iconFile%" (
+    powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { } }"
+)
+if not exist "%iconFile%" echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
+
+set "targetPath=C:\Program Files\Internet Explorer\iexplore.exe"
+if not exist "%targetPath%" if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" set "targetPath=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+if not exist "%targetPath%" if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files\Google\Chrome\Application\chrome.exe"
+if not exist "%targetPath%" if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+if not exist "%targetPath%" echo ADVERTENCIA: No se detecto IE/Edge/Chrome; se dejara ruta IE.
+
+for /d %%U in ("C:\Users\*") do (
+    set "uname=%%~nxU"
+    set "skip=N"
+    for %%S in (Default DefaultUser Public All Users AllUsers) do if /I "!uname!"=="%%S" set "skip=Y"
+    if /I "!uname:~0,7!"=="Default" set "skip=Y"
+    if "!skip!"=="Y" (
+        rem Saltar
+    ) else if exist "%%U\Desktop" (
+        echo Creando acceso directo en: %%U\Desktop
+        powershell -Command "try { $WshShell=New-Object -ComObject WScript.Shell; $sc=$WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $sc.TargetPath='%targetPath%'; $sc.Arguments='https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $sc.IconLocation='%iconFile%' }; $sc.Save() } catch { }"
+    ) else (
+        echo ADVERTENCIA: No existe carpeta Desktop para %%U
+    )
+)
+
+if exist "C:\Users\Public\Desktop" (
+    powershell -Command "try { $WshShell=New-Object -ComObject WScript.Shell; $sc=$WshShell.CreateShortcut('C:\Users\Public\Desktop\HelpDeskSupport.lnk'); $sc.TargetPath='%targetPath%'; $sc.Arguments='https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $sc.IconLocation='%iconFile%' }; $sc.Save() } catch { }"
+)
+
+echo Acceso directo de HelpDesk creado. Icono en %iconFile%
+endlocal
+goto :eof
+
+:install_anydesk_atera
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo      INSTALACION DE ANYDESK (CLIENT ATERA)
+echo ===============================================
+echo.
+set "anydesk_url=https://descargas-xelerica.netlify.app/assets/downloads/AnyDesk_Custom_Client_Atera.exe"
+set "anydesk_exe=%temp%\AnyDesk_Custom_Client_Atera.exe"
+
+echo Descargando AnyDesk custom desde: %anydesk_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%anydesk_url%' -OutFile '%anydesk_exe%' -UseBasicParsing } catch { Write-Host 'Error descarga' }"
+if not exist "%anydesk_exe%" (
+    echo ERROR: No se pudo descargar AnyDesk.
+    set /a error_count+=1
+    endlocal & goto :eof
+)
+
+:: Validar tamaño del archivo descargado
+set "file_size="
+for %%F in ("%anydesk_exe%") do set "file_size=%%~zF"
+if "!file_size!"=="" (
+    echo ADVERTENCIA: No se pudo obtener el tamaño del archivo. Continuando...
+) else (
+    echo Tamaño descargado: !file_size! bytes
+    if !file_size! LSS 500000 (
+        echo ERROR: Archivo AnyDesk demasiado pequeño (!file_size! bytes). Posible descarga fallida.
+        del "%anydesk_exe%" >nul 2>&1
+        set /a error_count+=1
+        endlocal & goto :eof
+    )
+)
+
+echo Ejecutando instalación silenciosa...
+start "" /wait "%anydesk_exe%" --install "C:\Program Files\AnyDesk" --silent --create-shortcuts=desktop,startmenu --start-with-win=1 --update-auto=1
+set "install_code=!errorlevel!"
+if !install_code! neq 0 (
+    echo Advertencia: instalación con parámetros falló (código !install_code!). Intentando ejecución simple...
+    start "" /wait "%anydesk_exe%"
+    set "install_code=!errorlevel!"
+)
+if !install_code! neq 0 (
+    echo ERROR: AnyDesk no pudo instalarse (código !install_code!).
+    set /a error_count+=1
+) else (
+    echo [EXITOSO] AnyDesk (Client Atera) instalado/desplegado.
+    if exist "C:\Program Files\AnyDesk\AnyDesk.exe" (
+        echo Ruta: C:\Program Files\AnyDesk\AnyDesk.exe
+    ) else if exist "%ProgramFiles(x86)%\AnyDesk\AnyDesk.exe" (
+        echo Ruta: %ProgramFiles(x86)%\AnyDesk\AnyDesk.exe
+    ) else (
+        echo Nota: Cliente portable; puede residir fuera de Program Files.
+    )
+)
+if exist "%anydesk_exe%" del "%anydesk_exe%"
 endlocal
 goto :eof
