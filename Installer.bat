@@ -105,6 +105,7 @@ set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
 set apps[75]=HelpDesk_Xelerica
 set apps[76]=Anydesk_Atera
+set apps[77]=Filezilla
 
 
 :menu
@@ -216,8 +217,6 @@ set apps[71]=OfimaBot
 set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
-set apps[75]=HelpDesk_Xelerica
-set apps[76]=Anydesk_Atera
 
 
 :menu
@@ -229,7 +228,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 38-76)
+:: Mostrar menu en dos columnas (1-37 y 38-77)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -238,13 +237,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 76 (
+            if %%j leq 75 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 76 (
+            if %%j leq 75 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -286,7 +285,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-76"
+    set "selected=1-75"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -425,10 +424,8 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
-    ) else if "%%a"=="HelpDesk_Xelerica" (
-        call :install_helpdesk_xelerica
-    ) else if "%%a"=="Anydesk_Atera" (
-        call :install_anydesk_atera
+    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -875,6 +872,78 @@ echo %resultadoEliminacion%
 echo --------------------------------------------------------
 endlocal
 goto :eof
+
+:install_helpdesk_xelerica_all
+setlocal EnableDelayedExpansion
+echo ==================================================
+echo Creando acceso directo HelpDesk Xelerica para TODOS los usuarios...
+echo URL destino: https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4
+
+set "URL=https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4"
+set "ICON_URL=https://xelerica.com/assets/images/icono.ico"
+set "ICON_FILE=%temp%\helpdesk_xelerica.ico"
+
+if not exist "%ICON_FILE%" (
+    echo Descargando icono...
+    powershell -Command "try { Invoke-WebRequest -Uri '%ICON_URL%' -OutFile '%ICON_FILE%' -UseBasicParsing } catch { exit 1 }" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
+    ) else (
+        echo Icono descargado correctamente.
+    )
+)
+
+set "USERS_DIR=C:\Users"
+if not exist "%USERS_DIR%" (
+    echo ERROR: No existe %USERS_DIR%
+    endlocal & set /a error_count+=1 & goto :eof
+)
+
+set /a created_count=0
+set /a failed_count=0
+
+for /d %%U in ("%USERS_DIR%\*") do (
+    set "_prof=%%~nxU"
+    set "_skip="
+    for %%S in (Public Default Default User DefaultAccount All Users All_Users Administrator Administrator.TEMP DefaultAppPool) do (
+        if /i "!_prof!"=="%%S" set "_skip=1"
+    )
+    if defined _skip (
+        rem Omitir perfiles de sistema
+    ) else (
+        set "DESK1=%%U\OneDrive\Desktop"
+        set "DESK2=%%U\Desktop"
+        set "TARGET_DESK="
+        if exist "!DESK1!" (set "TARGET_DESK=!DESK1!")
+        if not defined TARGET_DESK if exist "!DESK2!" (set "TARGET_DESK=!DESK2!")
+        if not defined TARGET_DESK (
+            set "TARGET_DESK=!DESK2!"
+            mkdir "!TARGET_DESK!" >nul 2>&1
+        )
+        if exist "!TARGET_DESK!" (
+            set "LNK_FILE=!TARGET_DESK!\HelpDesk Xelerica.lnk"
+            rem Crear acceso directo mediante PowerShell
+            powershell -Command "try { $W=New-Object -ComObject WScript.Shell; $S=$W.CreateShortcut(\"'!LNK_FILE!'\"); $S.TargetPath=\"cmd.exe\"; $S.Arguments=\"/c start '' '!URL!'\"; $S.WorkingDirectory=\"C:\\Windows\\System32\"; if (Test-Path \"'%ICON_FILE%'\") { $S.IconLocation=\"'%ICON_FILE%'\" }; $S.Save() } catch { exit 1 }" >nul 2>&1
+            if !errorlevel! equ 0 (
+                echo [OK] Creado en !TARGET_DESK! (^!_prof!^)
+                set /a created_count+=1
+            ) else (
+                echo [ERROR] No se pudo crear en !TARGET_DESK! (^!_prof!^)
+                set /a failed_count+=1
+            )
+        ) else (
+            echo [ERROR] No existe escritorio para !_prof!
+            set /a failed_count+=1
+        )
+    )
+)
+
+echo --------------------------------------------------
+echo Atajos creados: !created_count!
+echo Fallidos: !failed_count!
+if !failed_count! gtr 0 set /a error_count+=!failed_count!
+echo Acceso directo HelpDesk Xelerica finalizado.
+endlocal & goto :eof
 
 :: Función para buscar winget
 :find_winget
@@ -1369,7 +1438,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,71) do (
+for /l %%i in (1,1,75) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -1587,6 +1656,8 @@ for %%a in (!applications!) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1618,54 +1689,47 @@ echo.
 echo ===============================================
 echo           INSTALACION DE OFIMABOT
 echo ===============================================
-echo Descargando icono (ruta publica) y creando accesos directos...
+echo.
 
-set "iconUrl=https://xelerica.com/assets/images/icono.ico"
-set "iconDir=C:\ProgramData\HelpDeskXelerica"
-set "iconFile=%iconDir%\helpdesk_icono.ico"
+set "ofimabot_url=https://www.ofima.com/wp-content/uploads/2024/03/Ofimabot.zip"
+set "ofimabot_zip=%temp%\Ofimabot.zip"
+set "extract_dir=%temp%\ofimabot_extract"
 
-if not exist "%iconDir%" mkdir "%iconDir%" >nul 2>&1
+echo Descargando OfimaBot desde: %ofimabot_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%ofimabot_url%' -OutFile '%ofimabot_zip%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
 
-:: Descargar solo si no existe o pesa 0
-if not exist "%iconFile%" (
-    powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { } }"
+if not exist "%ofimabot_zip%" (
+    echo ERROR: Fallo en la descarga de OfimaBot
+    echo Verifique la conexion a internet e intente nuevamente.
+    set /a error_count+=1
+    endlocal
+    goto :eof
 )
 
-if not exist "%iconFile%" (
-    echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
+echo Verificando archivo descargado...
+for %%F in ("%ofimabot_zip%") do set file_size=%%~zF
+if %file_size% LSS 10000 (
+    echo ERROR: Archivo descargado incompleto ^(tamaño: %file_size% bytes^)
+    echo El archivo puede estar corrupto o la URL no es valida.
+    set /a error_count+=1
+    if exist "%ofimabot_zip%" del "%ofimabot_zip%"
+    endlocal
+    goto :eof
 )
 
-:: Determinar navegador disponible (IE -> Edge -> Chrome)
-set "targetPath=C:\Program Files\Internet Explorer\iexplore.exe"
-if not exist "%targetPath%" if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" set "targetPath=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-if not exist "%targetPath%" if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if not exist "%targetPath%" if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-if not exist "%targetPath%" echo ADVERTENCIA: No se detecto IE/Edge/Chrome, se dejara ruta a IE igualmente.
+echo [INFO] Archivo descargado correctamente ^(tamaño: %file_size% bytes^)
 
-:: Recorre cada carpeta de usuario en C:\Users (excluye perfiles especiales)
-for /d %%U in ("C:\Users\*") do (
-    set "uname=%%~nxU"
-    set "skip=N"
-    for %%S in (Default DefaultUser Public All Users AllUsers) do (
-        if /I "!uname!"=="%%S" set "skip=Y"
-    )
-    if /I "!uname:~0,7!"=="Default" set "skip=Y"
-    if "!skip!"=="Y" (
-        rem Saltar
-    ) else if exist "%%U\Desktop" (
-        echo Creando acceso directo en: %%U\Desktop
-        powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = '%targetPath%'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $Shortcut.IconLocation = '%iconFile%' }; $Shortcut.Save() } catch { Write-Host 'Fallo creando acceso en %%U' }"
-    ) else (
-        echo ADVERTENCIA: No existe carpeta Desktop para %%U
-    )
-)
+echo.
+echo Extrayendo OfimaBot...
+if not exist "%extract_dir%" mkdir "%extract_dir%"
 
-:: Escritorio publico
-if exist "C:\Users\Public\Desktop" (
-    powershell -Command "try { $WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('C:\Users\Public\Desktop\HelpDeskSupport.lnk'); $Shortcut.TargetPath = '%targetPath%'; $Shortcut.Arguments = 'https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $Shortcut.IconLocation = '%iconFile%' }; $Shortcut.Save() } catch { }"
-)
+:: Intentar extracción con PowerShell primero
+powershell -Command "try { Expand-Archive -Path '%ofimabot_zip%' -DestinationPath '%extract_dir%' -Force; Write-Host 'Extraccion PowerShell exitosa' } catch { Write-Host 'Error en extraccion PowerShell' }"
 
-echo Acceso directo de HelpDesk creado. Icono en %iconFile%
+:: Verificar si la extracción fue exitosa
+set "exe_found="
+for /r "%extract_dir%" %%f in (*.exe) do (
+    if /i "%%~nf"=="Ofimabot" (
         set "exe_found=%%f"
         echo [ENCONTRADO] Ejecutable: %%f
     )
@@ -1879,8 +1943,7 @@ echo Intentando instalacion con parametros de Office Click-to-Run...
 
 :: Metodo 1: Sin parametros (instalacion automatica)
 echo Probando instalacion automatica sin parametros...
-:: IMPORTANTE: siempre proveer un título vacío "" a START; de lo contrario la ruta se interpreta como título y no se ejecuta el exe
-start "" /wait "%office365_exe%"
+start /wait "%office365_exe%"
 set install_result=!errorlevel!
 
 if !install_result! neq 0 (
@@ -1897,7 +1960,7 @@ if !install_result! neq 0 (
     echo   ^<Display Level="None" AcceptEULA="TRUE" /^> >> "%temp%\office_config.xml"
     echo ^</Configuration^> >> "%temp%\office_config.xml"
     
-    start "" /wait "%office365_exe%" /configure "%temp%\office_config.xml"
+    start /wait "%office365_exe%" /configure "%temp%\office_config.xml"
     set install_result=!errorlevel!
     
     if exist "%temp%\office_config.xml" del "%temp%\office_config.xml"
@@ -2062,114 +2125,11 @@ echo [INFO] Limpieza completada
 endlocal
 goto :eof
 
-:install_helpdesk_xelerica
-setlocal enabledelayedexpansion
-echo.
-echo ===============================================
-echo      CREACION ACCESO DIRECTO HELP DESK
-echo ===============================================
-echo.
-echo Descargando icono (ruta publica) y creando accesos directos...
-
-set "iconUrl=https://xelerica.com/assets/images/icono.ico"
-set "iconDir=C:\ProgramData\HelpDeskXelerica"
-set "iconFile=%iconDir%\helpdesk_icono.ico"
-
-if not exist "%iconDir%" mkdir "%iconDir%" >nul 2>&1
-if not exist "%iconFile%" (
-    powershell -Command "try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { Start-Sleep -s 2; try { Invoke-WebRequest -Uri '%iconUrl%' -OutFile '%iconFile%' -UseBasicParsing } catch { } }"
-)
-if not exist "%iconFile%" echo ADVERTENCIA: No se pudo descargar el icono. Se usara icono por defecto.
-
-set "targetPath=C:\Program Files\Internet Explorer\iexplore.exe"
-if not exist "%targetPath%" if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" set "targetPath=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-if not exist "%targetPath%" if exist "C:\Program Files\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files\Google\Chrome\Application\chrome.exe"
-if not exist "%targetPath%" if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" set "targetPath=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-if not exist "%targetPath%" echo ADVERTENCIA: No se detecto IE/Edge/Chrome; se dejara ruta IE.
-
-for /d %%U in ("C:\Users\*") do (
-    set "uname=%%~nxU"
-    set "skip=N"
-    for %%S in (Default DefaultUser Public All Users AllUsers) do if /I "!uname!"=="%%S" set "skip=Y"
-    if /I "!uname:~0,7!"=="Default" set "skip=Y"
-    if "!skip!"=="Y" (
-        rem Saltar
-    ) else if exist "%%U\Desktop" (
-        echo Creando acceso directo en: %%U\Desktop
-        powershell -Command "try { $WshShell=New-Object -ComObject WScript.Shell; $sc=$WshShell.CreateShortcut('%%U\Desktop\HelpDeskSupport.lnk'); $sc.TargetPath='%targetPath%'; $sc.Arguments='https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $sc.IconLocation='%iconFile%' }; $sc.Save() } catch { }"
-    ) else (
-        echo ADVERTENCIA: No existe carpeta Desktop para %%U
-    )
-)
-
-if exist "C:\Users\Public\Desktop" (
-    powershell -Command "try { $WshShell=New-Object -ComObject WScript.Shell; $sc=$WshShell.CreateShortcut('C:\Users\Public\Desktop\HelpDeskSupport.lnk'); $sc.TargetPath='%targetPath%'; $sc.Arguments='https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2Fadd'; if (Test-Path '%iconFile%') { $sc.IconLocation='%iconFile%' }; $sc.Save() } catch { }"
-)
-
-echo Acceso directo de HelpDesk creado. Icono en %iconFile%
-endlocal
-goto :eof
-
-:install_anydesk_atera
-setlocal enabledelayedexpansion
-echo.
-echo ===============================================
-echo      INSTALACION DE ANYDESK (CLIENT ATERA)
-echo ===============================================
-echo.
-set "anydesk_url=https://descargas-xelerica.netlify.app/assets/downloads/AnyDesk_Custom_Client_Atera.exe"
-set "anydesk_exe=%temp%\AnyDesk_Custom_Client_Atera.exe"
-
-echo Descargando AnyDesk custom desde: %anydesk_url%
-powershell -Command "try { Invoke-WebRequest -Uri '%anydesk_url%' -OutFile '%anydesk_exe%' -UseBasicParsing } catch { Write-Host 'Error descarga' }"
-if not exist "%anydesk_exe%" (
-    echo ERROR: No se pudo descargar AnyDesk.
-    set /a error_count+=1
-    endlocal & goto :eof
-)
-for %%F in ("%anydesk_exe%") do set file_size=%%~zF
-:: Usar expansion retardada para evitar errores de parseo
-if not defined file_size (
-    echo ADVERTENCIA: No se pudo obtener el tamano del archivo. Continuando...
-) else (
-    echo Tamano descargado: !file_size! bytes
-    if !file_size! LSS 500000 (
-        echo ERROR: Archivo AnyDesk demasiado pequeno (!file_size! bytes). Posible descarga fallida.
-        del "%anydesk_exe%" >nul 2>&1
-        set /a error_count+=1
-        endlocal & goto :eof
-    )
-)
-echo Ejecutando instalacion silenciosa...
-start "" /wait "%anydesk_exe%" --install "C:\Program Files\AnyDesk" --silent --create-shortcuts=desktop,startmenu --start-with-win=1 --update-auto=1
-set install_code=!errorlevel!
-if !install_code! neq 0 (
-    echo Advertencia: instalacion con parametros fallo (codigo !install_code!). Intentando ejecucion simple...
-    start "" /wait "%anydesk_exe%"
-    set install_code=!errorlevel!
-)
-if !install_code! neq 0 (
-    echo ERROR: AnyDesk no pudo instalarse (codigo !install_code!).
-    set /a error_count+=1
-) else (
-    echo [EXITOSO] AnyDesk (Client Atera) instalado/desplegado.
-    if exist "C:\Program Files\AnyDesk\AnyDesk.exe" (
-        echo Ruta: C:\Program Files\AnyDesk\AnyDesk.exe
-    ) else if exist "%ProgramFiles(x86)%\AnyDesk\AnyDesk.exe" (
-        echo Ruta: %ProgramFiles(x86)%\AnyDesk\AnyDesk.exe
-    ) else (
-        echo Nota: Cliente portable; puede residir fuera de Program Files.
-    )
-)
-if exist "%anydesk_exe%" del "%anydesk_exe%"
-endlocal
-goto :eof
-
 echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 36-74)
+:: Mostrar menu en dos columnas (1-37 y 38-75)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -2178,13 +2138,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 74 (
+            if %%j leq 75 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 74 (
+            if %%j leq 75 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -2226,7 +2186,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-76"
+    set "selected=1-75"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -2365,10 +2325,8 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
-    ) else if "%%a"=="HelpDesk_Xelerica" (
-        call :install_helpdesk_xelerica
-    ) else if "%%a"=="Anydesk_Atera" (
-        call :install_anydesk_atera
+    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -3527,6 +3485,8 @@ for %%a in (!applications!) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -3812,8 +3772,7 @@ echo Intentando instalacion con parametros de Office Click-to-Run...
 
 :: Metodo 1: Sin parametros (instalacion automatica)
 echo Probando instalacion automatica sin parametros...
-:: IMPORTANTE: siempre proveer un título vacío "" a START; de lo contrario la ruta se interpreta como título y no se ejecuta el exe
-start "" /wait "%office365_exe%"
+start /wait "%office365_exe%"
 set install_result=!errorlevel!
 
 if !install_result! neq 0 (
@@ -3830,7 +3789,7 @@ if !install_result! neq 0 (
     echo   ^<Display Level="None" AcceptEULA="TRUE" /^> >> "%temp%\office_config.xml"
     echo ^</Configuration^> >> "%temp%\office_config.xml"
     
-    start "" /wait "%office365_exe%" /configure "%temp%\office_config.xml"
+    start /wait "%office365_exe%" /configure "%temp%\office_config.xml"
     set install_result=!errorlevel!
     
     if exist "%temp%\office_config.xml" del "%temp%\office_config.xml"
