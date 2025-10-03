@@ -239,10 +239,10 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 38-77)
+:: Mostrar menu en dos columnas (1-40 y 41-80)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,39) do (
+for /l %%i in (1,1,43) do (
     set /a right_col=%%i+37
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
@@ -2148,7 +2148,7 @@ echo.
 :: Mostrar menu en dos columnas (1-40 y 41-80)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,39) do (
+for /l %%i in (1,1,43) do (
     set /a right_col=%%i+37
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
