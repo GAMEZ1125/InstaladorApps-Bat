@@ -111,6 +111,7 @@ set apps[78]=3TSoftwareLabs.Robo3T
 set apps[79]=DBVis.DbVisualizer
 set apps[80]=PuTTY.PuTTY
 set apps[81]=uvncbvba.UltraVNC
+set apps[82]=UltraVNC_Choco
 
 
 :menu
@@ -230,6 +231,7 @@ set apps[78]=3TSoftwareLabs.Robo3T
 set apps[79]=DBVis.DbVisualizer
 set apps[80]=PuTTY.PuTTY
 set apps[81]=uvncbvba.UltraVNC
+set apps[82]=UltraVNC_Choco
 
 
 :menu
@@ -241,22 +243,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-40 y 41-81)
+:: Mostrar menu en dos columnas (1-40 y 41-82)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,44) do (
+for /l %%i in (1,1,45) do (
     set /a right_col=%%i+37
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 81 (
+            if %%j leq 82 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 81 (
+            if %%j leq 82 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -298,7 +300,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-81"
+    set "selected=1-82"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -364,6 +366,15 @@ for %%a in (%applications%) do (
         "%wingetPath%" install --id Chocolatey.Chocolatey --accept-source-agreements --accept-package-agreements -h
     ) else if "%%a"=="FVM" (
         powershell -Command "choco install fvm -y"
+    ) else if "%%a"=="UltraVNC_Choco" (
+        echo Instalando UltraVNC con Chocolatey...
+        powershell -Command "choco install ultravnc -y"
+        if !errorlevel! neq 0 (
+            echo ERROR al instalar UltraVNC_Choco
+            set /a error_count+=1
+        ) else (
+            echo UltraVNC_Choco instalado correctamente
+        )
     ) else if "%%a"=="UltraVNC_1436" (
         call :install_exe "https://descargas-xelerica.netlify.app/assets/downloads/UltraVNC_1436_X64_Setup.exe"
     ) else if "%%a"=="Microsoft.Sysinternals.SDelete" (
@@ -1456,7 +1467,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,81) do (
+for /l %%i in (1,1,82) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -2147,22 +2158,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-40 y 41-81)
+:: Mostrar menu en dos columnas (1-40 y 41-82)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,44) do (
+for /l %%i in (1,1,45) do (
     set /a right_col=%%i+37
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 81 (
+            if %%j leq 82 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 81 (
+            if %%j leq 82 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -2204,7 +2215,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-81"
+    set "selected=1-82"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -2270,6 +2281,15 @@ for %%a in (%applications%) do (
         "%wingetPath%" install --id Chocolatey.Chocolatey --accept-source-agreements --accept-package-agreements -h
     ) else if "%%a"=="FVM" (
         powershell -Command "choco install fvm -y"
+    ) else if "%%a"=="UltraVNC_Choco" (
+        echo Instalando UltraVNC con Chocolatey...
+        powershell -Command "choco install ultravnc -y"
+        if !errorlevel! neq 0 (
+            echo ERROR al instalar UltraVNC_Choco
+            set /a error_count+=1
+        ) else (
+            echo UltraVNC_Choco instalado correctamente
+        )
     ) else if "%%a"=="UltraVNC_1436" (
         call :install_exe "https://descargas-xelerica.netlify.app/assets/downloads/UltraVNC_1436_X64_Setup.exe"
     ) else if "%%a"=="Microsoft.Sysinternals.SDelete" (
