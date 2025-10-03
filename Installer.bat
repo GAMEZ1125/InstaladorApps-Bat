@@ -107,6 +107,9 @@ set apps[74]=Gradle_v9.0.0
 set apps[75]=HelpDesk_Xelerica
 set apps[76]=Anydesk_Atera
 set apps[77]=Filezilla
+set apps[78]=3TSoftwareLabs.Robo3T
+set apps[79]=DBVis.DbVisualizer
+set apps[80]=PuTTY.PuTTY
 
 
 :menu
@@ -219,6 +222,12 @@ set apps[71]=OfimaBot
 set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
+set apps[75]=HelpDesk_Xelerica
+set apps[76]=Anydesk_Atera
+set apps[77]=Filezilla
+set apps[78]=3TSoftwareLabs.Robo3T
+set apps[79]=DBVis.DbVisualizer
+set apps[80]=PuTTY.PuTTY
 
 
 :menu
@@ -239,13 +248,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 75 (
+            if %%j leq 80 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 75 (
+            if %%j leq 80 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -287,7 +296,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-75"
+    set "selected=1-80"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -1445,7 +1454,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,75) do (
+for /l %%i in (1,1,80) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -2136,7 +2145,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-37 y 38-75)
+:: Mostrar menu en dos columnas (1-40 y 41-80)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,39) do (
@@ -2145,13 +2154,13 @@ for /l %%i in (1,1,39) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 75 (
+            if %%j leq 80 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 75 (
+            if %%j leq 80 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -2193,7 +2202,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-75"
+    set "selected=1-80"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
