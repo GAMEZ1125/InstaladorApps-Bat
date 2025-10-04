@@ -31,7 +31,7 @@ if not exist "%wingetPath%" (
 :: Lista de aplicaciones actualizada
 set apps[1]=JSFoundation.Appium
 set apps[2]=Google.Chrome
-set apps[3]=dbeaver.PRO
+set apps[3]=DBeaver.DBeaver.Community
 set apps[4]=Mozilla.Firefox
 set apps[5]=Git.Git
 set apps[6]=OpenJS.NodeJS
@@ -151,7 +151,7 @@ if not exist "%wingetPath%" (
 :: Lista de aplicaciones actualizada
 set apps[1]=JSFoundation.Appium
 set apps[2]=Google.Chrome
-set apps[3]=dbeaver.PRO
+set apps[3]=DBeaver.DBeaver.Community
 set apps[4]=Mozilla.Firefox
 set apps[5]=Git.Git
 set apps[6]=OpenJS.NodeJS
