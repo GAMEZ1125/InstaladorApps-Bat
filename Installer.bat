@@ -112,6 +112,7 @@ set apps[79]=DBVis.DbVisualizer
 set apps[80]=PuTTY.PuTTY
 set apps[81]=uvncbvba.UltraVNC
 set apps[82]=UltraVNC_Choco
+set apps[83]=Add/Delete_UserGroup
 
 
 :menu
@@ -232,6 +233,7 @@ set apps[79]=DBVis.DbVisualizer
 set apps[80]=PuTTY.PuTTY
 set apps[81]=uvncbvba.UltraVNC
 set apps[82]=UltraVNC_Choco
+set apps[83]=Add/Delete_UserGroup
 
 
 :menu
@@ -246,19 +248,19 @@ echo.
 :: Mostrar menu en dos columnas (1-41 y 42-82)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,45) do (
+for /l %%i in (1,1,46) do (
     set /a right_col=%%i+41
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,41!"
         if %%i leq 41 (
-            if %%j leq 82 (
+            if %%j leq 83 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 41 (
-            if %%j leq 82 (
+            if %%j leq 83 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -300,7 +302,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-82"
+    set "selected=1-83"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -375,6 +377,8 @@ for %%a in (%applications%) do (
         ) else (
             echo UltraVNC_Choco instalado correctamente
         )
+    ) else if "%%a"=="Add/Delete_UserGroup" (
+        call :manage_user_group
     ) else if "%%a"=="UltraVNC_1436" (
         call :install_exe "https://descargas-xelerica.netlify.app/assets/downloads/UltraVNC_1436_X64_Setup.exe"
     ) else if "%%a"=="Microsoft.Sysinternals.SDelete" (
@@ -974,6 +978,111 @@ if !failed_count! gtr 0 set /a error_count+=!failed_count!
 echo Acceso directo HelpDesk Xelerica finalizado.
 endlocal & goto :eof
 
+:manage_user_group
+setlocal EnableDelayedExpansion
+cls
+echo ==================================================
+echo    AGREGAR/ELIMINAR USUARIO AL GRUPO ADMINISTRADORES
+echo ==================================================
+echo.
+echo Esta herramienta permite agregar o eliminar un usuario
+echo de dominio del grupo local de Administradores.
+echo.
+
+:ask_domain
+set "domain_name="
+set /p "domain_name=Ingrese el nombre del DOMINIO (ej: chcorp): "
+if not defined domain_name (
+    echo.
+    echo ERROR: Debe ingresar un dominio.
+    pause
+    goto ask_domain
+)
+
+:ask_username
+set "user_name="
+set /p "user_name=Ingrese el nombre del USUARIO (ej: acelish): "
+if not defined user_name (
+    echo.
+    echo ERROR: Debe ingresar un usuario.
+    pause
+    goto ask_username
+)
+
+echo.
+echo Usuario completo: %domain_name%\%user_name%
+echo.
+
+:ask_action
+echo Seleccione la accion a realizar:
+echo [1] AGREGAR usuario al grupo Administradores
+echo [2] ELIMINAR usuario del grupo Administradores
+echo [3] Cancelar
+echo.
+set "action="
+set /p "action=Ingrese su opcion (1/2/3): "
+
+if "%action%"=="1" goto do_add
+if "%action%"=="2" goto do_delete
+if "%action%"=="3" goto cancel_action
+echo.
+echo Opcion invalida. Intente nuevamente.
+pause
+goto ask_action
+
+:do_add
+echo.
+echo --------------------------------------------------
+echo Agregando %domain_name%\%user_name% al grupo Administradores...
+echo --------------------------------------------------
+net localgroup Administradores %domain_name%\%user_name% /add
+if !errorlevel! equ 0 (
+    echo.
+    echo [EXITO] Usuario agregado correctamente al grupo Administradores.
+) else (
+    echo.
+    echo [ERROR] No se pudo agregar el usuario. Codigo de error: !errorlevel!
+    echo Posibles causas:
+    echo - El usuario ya existe en el grupo
+    echo - El usuario no existe en el dominio
+    echo - No tiene permisos de administrador
+    set /a error_count+=1
+)
+echo.
+pause
+goto end_manage
+
+:do_delete
+echo.
+echo --------------------------------------------------
+echo Eliminando %domain_name%\%user_name% del grupo Administradores...
+echo --------------------------------------------------
+net localgroup Administradores %domain_name%\%user_name% /delete
+if !errorlevel! equ 0 (
+    echo.
+    echo [EXITO] Usuario eliminado correctamente del grupo Administradores.
+) else (
+    echo.
+    echo [ERROR] No se pudo eliminar el usuario. Codigo de error: !errorlevel!
+    echo Posibles causas:
+    echo - El usuario no existe en el grupo
+    echo - El usuario no existe en el dominio
+    echo - No tiene permisos de administrador
+    set /a error_count+=1
+)
+echo.
+pause
+goto end_manage
+
+:cancel_action
+echo.
+echo Operacion cancelada.
+pause
+goto end_manage
+
+:end_manage
+endlocal & goto :eof
+
 :: Función para buscar winget
 :find_winget
 set "wingetPath="
@@ -1467,7 +1576,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,82) do (
+for /l %%i in (1,1,83) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -2158,22 +2267,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-40 y 41-82)
+:: Mostrar menu en dos columnas (1-40 y 41-83)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,45) do (
+for /l %%i in (1,1,46) do (
     set /a right_col=%%i+37
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,37!"
         if %%i leq 37 (
-            if %%j leq 82 (
+            if %%j leq 83 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 37 (
-            if %%j leq 82 (
+            if %%j leq 83 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -2215,7 +2324,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-82"
+    set "selected=1-83"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -2290,6 +2399,8 @@ for %%a in (%applications%) do (
         ) else (
             echo UltraVNC_Choco instalado correctamente
         )
+    ) else if "%%a"=="Add/Delete_UserGroup" (
+        call :manage_user_group
     ) else if "%%a"=="UltraVNC_1436" (
         call :install_exe "https://descargas-xelerica.netlify.app/assets/downloads/UltraVNC_1436_X64_Setup.exe"
     ) else if "%%a"=="Microsoft.Sysinternals.SDelete" (
