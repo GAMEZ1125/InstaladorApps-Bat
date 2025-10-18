@@ -253,17 +253,17 @@ echo.
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,47) do (
-    set /a right_col=%%i+41
+    set /a right_col=%%i+43
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
-        set "left_app=!left_app:~0,41!"
-        if %%i leq 41 (
+        set "left_app=!left_app:~0,43!"
+        if %%i leq 43 (
             if %%j leq 85 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
-        ) else if %%i gtr 41 (
+        ) else if %%i gtr 43 (
             if %%j leq 85 (
                 echo                                 %%j. !apps[%%j]!
             )
