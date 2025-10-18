@@ -452,6 +452,8 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
         call :install_helpdesk_xelerica_all
     ) else (
@@ -1795,6 +1797,8 @@ for %%a in (!applications!) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
         call :install_helpdesk_xelerica_all
     ) else (
@@ -2475,6 +2479,8 @@ for %%a in (%applications%) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
         call :install_helpdesk_xelerica_all
     ) else (
@@ -3640,6 +3646,8 @@ for %%a in (!applications!) do (
         call :install_office365_32bits
     ) else if "%%a"=="Gradle_v9.0.0" (
         call :install_gradle_v9
+    ) else if "%%a"=="HelpDesk_Xelerica" (
+        call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
         call :install_helpdesk_xelerica_all
     ) else (
