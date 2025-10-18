@@ -113,6 +113,8 @@ set apps[80]=PuTTY.PuTTY
 set apps[81]=uvncbvba.UltraVNC
 set apps[82]=UltraVNC_Choco
 set apps[83]=Add/Delete_UserGroup
+set apps[84]=Reserved_Slot_84
+set apps[85]=InstallWith_Winget_Or_Choco
 
 
 :menu
@@ -234,6 +236,8 @@ set apps[80]=PuTTY.PuTTY
 set apps[81]=uvncbvba.UltraVNC
 set apps[82]=UltraVNC_Choco
 set apps[83]=Add/Delete_UserGroup
+set apps[84]=Reserved_Slot_84
+set apps[85]=InstallWith_Winget_Or_Choco
 
 
 :menu
@@ -248,13 +252,13 @@ echo.
 :: Mostrar menu en dos columnas (1-41 y 42-82)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,46) do (
+for /l %%i in (1,1,47) do (
     set /a right_col=%%i+41
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,41!"
         if %%i leq 41 (
-            if %%j leq 83 (
+            if %%j leq 85 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
@@ -302,7 +306,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-83"
+    set "selected=1-85"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -379,6 +383,10 @@ for %%a in (%applications%) do (
         )
     ) else if "%%a"=="Add/Delete_UserGroup" (
         call :manage_user_group
+    ) else if "%%a"=="Reserved_Slot_84" (
+        echo Reserved slot 84 - No action
+    ) else if "%%a"=="InstallWith_Winget_Or_Choco" (
+        call :install_with_package_manager
     ) else if "%%a"=="UltraVNC_1436" (
         call :install_exe "https://descargas-xelerica.netlify.app/assets/downloads/UltraVNC_1436_X64_Setup.exe"
     ) else if "%%a"=="Microsoft.Sysinternals.SDelete" (
@@ -1284,6 +1292,182 @@ goto end_manage
 :end_manage
 endlocal & goto :eof
 
+:install_with_package_manager
+setlocal EnableDelayedExpansion
+cls
+echo ==================================================
+echo    BUSCAR E INSTALAR CON WINGET O CHOCOLATEY
+echo ==================================================
+echo.
+echo Esta herramienta permite buscar e instalar paquetes
+echo usando WinGet o Chocolatey.
+echo.
+
+:select_package_manager
+echo Seleccione el gestor de paquetes:
+echo [1] WinGet
+echo [2] Chocolatey
+echo [3] Cancelar
+echo.
+set "pm_choice="
+set /p "pm_choice=Ingrese su opcion (1/2/3): "
+
+if "%pm_choice%"=="1" goto use_winget
+if "%pm_choice%"=="2" goto use_choco
+if "%pm_choice%"=="3" goto cancel_pm
+echo.
+echo Opcion invalida. Intente nuevamente.
+pause
+goto select_package_manager
+
+:use_winget
+cls
+echo ==================================================
+echo    BUSCAR E INSTALAR CON WINGET
+echo ==================================================
+echo.
+
+:ask_search_winget
+set "search_term="
+set /p "search_term=Ingrese el nombre del paquete a buscar (o 'C' para cancelar): "
+if /i "!search_term!"=="C" goto cancel_pm
+if not defined search_term (
+    echo.
+    echo ERROR: Debe ingresar un termino de busqueda.
+    pause
+    goto ask_search_winget
+)
+
+echo.
+echo Buscando "!search_term!" en WinGet...
+echo --------------------------------------------------
+"%wingetPath%" search "!search_term!"
+echo --------------------------------------------------
+echo.
+
+:ask_package_id_winget
+set "package_id="
+set /p "package_id=Ingrese el ID del paquete a instalar (ej: Google.Chrome) o 'C' para cancelar: "
+if /i "!package_id!"=="C" goto cancel_pm
+if not defined package_id (
+    echo.
+    echo ERROR: Debe ingresar un ID de paquete.
+    pause
+    goto ask_package_id_winget
+)
+
+echo.
+echo --------------------------------------------------
+echo Verificando version instalada de !package_id!...
+echo --------------------------------------------------
+"%wingetPath%" list --id "!package_id!" --exact
+echo --------------------------------------------------
+echo.
+
+echo --------------------------------------------------
+echo Instalando !package_id! con WinGet...
+echo --------------------------------------------------
+"%wingetPath%" install --id "!package_id!" --silent --accept-package-agreements --accept-source-agreements
+if !errorlevel! equ 0 (
+    echo.
+    echo [EXITO] Paquete instalado correctamente con WinGet.
+) else (
+    echo.
+    echo [ERROR] No se pudo instalar el paquete. Codigo de error: !errorlevel!
+    echo Posibles causas:
+    echo - El paquete no existe
+    echo - El paquete ya esta instalado
+    echo - Problemas de red o permisos
+    set /a error_count+=1
+)
+echo.
+pause
+goto end_pm
+
+:use_choco
+cls
+echo ==================================================
+echo    BUSCAR E INSTALAR CON CHOCOLATEY
+echo ==================================================
+echo.
+
+:: Verificar si Chocolatey esta instalado
+where choco >nul 2>&1
+if !errorlevel! neq 0 (
+    echo [ERROR] Chocolatey no esta instalado en este sistema.
+    echo.
+    echo Para instalar Chocolatey, visite: https://chocolatey.org/install
+    echo.
+    pause
+    goto cancel_pm
+)
+
+:ask_search_choco
+set "search_term="
+set /p "search_term=Ingrese el nombre del paquete a buscar (o 'C' para cancelar): "
+if /i "!search_term!"=="C" goto cancel_pm
+if not defined search_term (
+    echo.
+    echo ERROR: Debe ingresar un termino de busqueda.
+    pause
+    goto ask_search_choco
+)
+
+echo.
+echo Buscando "!search_term!" en Chocolatey...
+echo --------------------------------------------------
+choco search "!search_term!"
+echo --------------------------------------------------
+echo.
+
+:ask_package_id_choco
+set "package_id="
+set /p "package_id=Ingrese el nombre del paquete a instalar (ej: googlechrome) o 'C' para cancelar: "
+if /i "!package_id!"=="C" goto cancel_pm
+if not defined package_id (
+    echo.
+    echo ERROR: Debe ingresar un nombre de paquete.
+    pause
+    goto ask_package_id_choco
+)
+
+echo.
+echo --------------------------------------------------
+echo Verificando version instalada de !package_id!...
+echo --------------------------------------------------
+choco list --local-only "!package_id!"
+echo --------------------------------------------------
+echo.
+
+echo --------------------------------------------------
+echo Instalando !package_id! con Chocolatey...
+echo --------------------------------------------------
+choco install "!package_id!" -y
+if !errorlevel! equ 0 (
+    echo.
+    echo [EXITO] Paquete instalado correctamente con Chocolatey.
+) else (
+    echo.
+    echo [ERROR] No se pudo instalar el paquete. Codigo de error: !errorlevel!
+    echo Posibles causas:
+    echo - El paquete no existe
+    echo - El paquete ya esta instalado
+    echo - Problemas de red o permisos
+    set /a error_count+=1
+)
+echo.
+pause
+goto end_pm
+
+:cancel_pm
+echo.
+echo Operacion cancelada.
+pause
+goto end_pm
+
+:end_pm
+endlocal & goto :eof
+
 :: Función para buscar winget
 :find_winget
 set "wingetPath="
@@ -1777,7 +1961,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,83) do (
+for /l %%i in (1,1,85) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
