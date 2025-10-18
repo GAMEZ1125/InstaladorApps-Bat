@@ -105,7 +105,7 @@ set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
 set apps[75]=HelpDesk_Xelerica
-set apps[76]=Anydesk_Atera
+set apps[76]=Helpdesk_Xelerica_OneDrive
 set apps[77]=Filezilla
 set apps[78]=3TSoftwareLabs.Robo3T
 set apps[79]=DBVis.DbVisualizer
@@ -226,7 +226,7 @@ set apps[72]=UIPath
 set apps[73]=Office365_32bits
 set apps[74]=Gradle_v9.0.0
 set apps[75]=HelpDesk_Xelerica
-set apps[76]=Anydesk_Atera
+set apps[76]=Helpdesk_Xelerica_OneDrive
 set apps[77]=Filezilla
 set apps[78]=3TSoftwareLabs.Robo3T
 set apps[79]=DBVis.DbVisualizer
@@ -456,6 +456,8 @@ for %%a in (%applications%) do (
         call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
         call :install_helpdesk_xelerica_all
+    ) else if "%%a"=="Helpdesk_Xelerica_OneDrive" (
+        call :install_helpdesk_onedrive
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1001,6 +1003,180 @@ echo Fallidos: !failed_count!
 if !failed_count! gtr 0 set /a error_count+=!failed_count!
 
 echo Acceso directo HelpDesk Xelerica finalizado.
+endlocal & goto :eof
+
+:install_helpdesk_onedrive
+setlocal EnableDelayedExpansion
+cls
+echo ==================================================
+echo   CREAR ACCESO DIRECTO HELPDESK EN ONEDRIVE
+echo ==================================================
+echo.
+echo Esta herramienta crea un acceso directo al HelpDesk
+echo en la carpeta OneDrive del usuario seleccionado.
+echo.
+
+:: URLs y configuración
+set "URL=https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%%2Fadd"
+set "ICON_URL=https://xelerica.com/assets/images/icono.ico"
+set "ICON_FILE=%temp%\icono_helpdesk.ico"
+
+:: Descargar icono si no existe
+if not exist "%ICON_FILE%" (
+    echo Descargando icono...
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "try { Invoke-WebRequest -Uri '%ICON_URL%' -OutFile '%ICON_FILE%' -UseBasicParsing } catch { exit 1 }" >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo ADVERTENCIA: No se pudo descargar el icono.
+    ) else (
+        echo Icono descargado correctamente.
+    )
+)
+
+:: Listar usuarios disponibles
+echo.
+echo --------------------------------------------------
+echo USUARIOS DISPONIBLES:
+echo --------------------------------------------------
+set /a user_count=0
+set "USERS_DIR=C:\Users"
+
+for /d %%U in ("%USERS_DIR%\*") do (
+    set "_prof=%%~nxU"
+    set "_skip="
+    for %%S in (Public Default "Default User" DefaultAccount "All Users" All_Users Administrator Administrator.TEMP DefaultAppPool) do (
+        if /i "!_prof!"=="%%S" set "_skip=1"
+    )
+    if not defined _skip (
+        set /a user_count+=1
+        set "user[!user_count!]=!_prof!"
+        echo  !user_count!. !_prof!
+    )
+)
+
+if !user_count! equ 0 (
+    echo ERROR: No se encontraron usuarios disponibles.
+    pause
+    endlocal & set /a error_count+=1 & goto :eof
+)
+
+echo.
+:ask_user_selection
+set "selected_user="
+set /p "selected_user=Seleccione el numero del usuario (1-!user_count!) o [C] para cancelar: "
+
+if /i "%selected_user%"=="C" (
+    echo Operacion cancelada.
+    pause
+    endlocal & goto :eof
+)
+
+:: Validar entrada
+set "valid="
+for /l %%i in (1,1,!user_count!) do (
+    if "%selected_user%"=="%%i" set "valid=1"
+)
+
+if not defined valid (
+    echo ERROR: Seleccion invalida. Intente nuevamente.
+    goto ask_user_selection
+)
+
+:: Obtener nombre de usuario seleccionado
+set "selected_username=!user[%selected_user%]!"
+echo.
+echo Usuario seleccionado: %selected_username%
+echo.
+
+:: Buscar carpeta OneDrive
+set "USER_PATH=%USERS_DIR%\%selected_username%"
+set "ONEDRIVE_DESKTOP="
+
+:: Buscar en diferentes ubicaciones de OneDrive
+for /d %%D in ("%USER_PATH%\OneDrive*") do (
+    if exist "%%D\Escritorio" (
+        set "ONEDRIVE_DESKTOP=%%D\Escritorio"
+        goto found_onedrive
+    )
+    if exist "%%D\Desktop" (
+        set "ONEDRIVE_DESKTOP=%%D\Desktop"
+        goto found_onedrive
+    )
+)
+
+:found_onedrive
+if not defined ONEDRIVE_DESKTOP (
+    echo ADVERTENCIA: No se encontro carpeta OneDrive para este usuario.
+    echo Buscando carpeta Desktop local...
+    
+    if exist "%USER_PATH%\Desktop" (
+        set "ONEDRIVE_DESKTOP=%USER_PATH%\Desktop"
+        echo Usando: %USER_PATH%\Desktop
+    ) else if exist "%USER_PATH%\Escritorio" (
+        set "ONEDRIVE_DESKTOP=%USER_PATH%\Escritorio"
+        echo Usando: %USER_PATH%\Escritorio
+    ) else (
+        echo ERROR: No se encontro carpeta de escritorio para el usuario.
+        pause
+        endlocal & set /a error_count+=1 & goto :eof
+    )
+) else (
+    echo OneDrive encontrado: !ONEDRIVE_DESKTOP!
+)
+
+:: Crear directorio si no existe
+if not exist "!ONEDRIVE_DESKTOP!" (
+    echo Creando directorio: !ONEDRIVE_DESKTOP!
+    mkdir "!ONEDRIVE_DESKTOP!" 2>nul
+)
+
+:: Crear acceso directo
+set "LNK_FILE=!ONEDRIVE_DESKTOP!\HelpDeskSupport.lnk"
+echo.
+echo Creando acceso directo en: !LNK_FILE!
+echo.
+
+:: Método con PowerShell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!LNK_FILE!'); $s.TargetPath = 'C:\Program Files\Internet Explorer\iexplore.exe'; $s.Arguments = '!URL!'; $s.WorkingDirectory = '%USER_PATH%'; if (Test-Path '%ICON_FILE%') { $s.IconLocation = '%ICON_FILE%' }; $s.Save(); exit 0" 2>nul
+
+if !errorlevel! equ 0 (
+    if exist "!LNK_FILE!" (
+        echo [EXITOSO] Acceso directo creado correctamente
+        echo Ubicacion: !LNK_FILE!
+        echo Usuario: %selected_username%
+    ) else (
+        echo [ERROR] El acceso directo no se creo (archivo no encontrado)
+        set /a error_count+=1
+    )
+) else (
+    echo [ERROR] Fallo al crear el acceso directo
+    echo Intentando con metodo alternativo VBScript...
+    
+    :: Método alternativo con VBScript
+    set "VBS_FILE=%temp%\create_shortcut_hd.vbs"
+    echo Set oWS = WScript.CreateObject^("WScript.Shell"^) > "!VBS_FILE!"
+    echo sLinkFile = "!LNK_FILE!" >> "!VBS_FILE!"
+    echo Set oLink = oWS.CreateShortcut^(sLinkFile^) >> "!VBS_FILE!"
+    echo oLink.TargetPath = "C:\Program Files\Internet Explorer\iexplore.exe" >> "!VBS_FILE!"
+    echo oLink.Arguments = "!URL!" >> "!VBS_FILE!"
+    echo oLink.WorkingDirectory = "%USER_PATH%" >> "!VBS_FILE!"
+    echo oLink.IconLocation = "%ICON_FILE%" >> "!VBS_FILE!"
+    echo oLink.Save >> "!VBS_FILE!"
+    
+    cscript //nologo "!VBS_FILE!" >nul 2>&1
+    del "!VBS_FILE!" >nul 2>&1
+    
+    if exist "!LNK_FILE!" (
+        echo [EXITOSO] Acceso directo creado con VBScript
+        echo Ubicacion: !LNK_FILE!
+    ) else (
+        echo [ERROR] No se pudo crear el acceso directo con ningun metodo
+        set /a error_count+=1
+    )
+)
+
+echo.
+echo --------------------------------------------------
+pause
 endlocal & goto :eof
 
 :manage_user_group
@@ -1823,6 +1999,8 @@ for %%a in (!applications!) do (
         call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Acceso_Directo_Helpdesk_Xelerica" (
         call :install_helpdesk_xelerica_all
+    ) else if "%%a"=="Helpdesk_Xelerica_OneDrive" (
+        call :install_helpdesk_onedrive
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
