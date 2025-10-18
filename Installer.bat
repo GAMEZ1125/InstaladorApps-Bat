@@ -957,14 +957,36 @@ for /d %%U in ("%USERS_DIR%\*") do (
         )
         if exist "!TARGET_DESK!" (
             set "LNK_FILE=!TARGET_DESK!\HelpDesk Xelerica.lnk"
-            rem Crear acceso directo mediante PowerShell
-            powershell -Command "try { $W=New-Object -ComObject WScript.Shell; $S=$W.CreateShortcut(\"'!LNK_FILE!'\"); $S.TargetPath=\"cmd.exe\"; $S.Arguments=\"/c start '' '!URL!'\"; $S.WorkingDirectory=\"C:\\Windows\\System32\"; if (Test-Path \"'%ICON_FILE%'\") { $S.IconLocation=\"'%ICON_FILE%'\" }; $S.Save() } catch { exit 1 }" >nul 2>&1
-            if !errorlevel! equ 0 (
+            set "VBS_FILE=%temp%\create_shortcut_!_prof!.vbs"
+            
+            rem Intentar crear con PowerShell primero
+            powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!LNK_FILE!'); $s.TargetPath = 'cmd.exe'; $s.Arguments = '/c start \"\" \"!URL!\"'; $s.WorkingDirectory = 'C:\Windows\System32'; if (Test-Path '%ICON_FILE%') { $s.IconLocation = '%ICON_FILE%' }; $s.Save(); exit 0" 2>nul
+            
+            rem Verificar si se creó el archivo
+            if exist "!LNK_FILE!" (
                 echo [OK] Creado en !TARGET_DESK! (^!_prof!^)
                 set /a created_count+=1
             ) else (
-                echo [ERROR] No se pudo crear en !TARGET_DESK! (^!_prof!^)
-                set /a failed_count+=1
+                rem Método alternativo con VBScript
+                echo Set oWS = WScript.CreateObject^("WScript.Shell"^) > "!VBS_FILE!"
+                echo sLinkFile = "!LNK_FILE!" >> "!VBS_FILE!"
+                echo Set oLink = oWS.CreateShortcut^(sLinkFile^) >> "!VBS_FILE!"
+                echo oLink.TargetPath = "cmd.exe" >> "!VBS_FILE!"
+                echo oLink.Arguments = "/c start """" ""!URL!""" >> "!VBS_FILE!"
+                echo oLink.WorkingDirectory = "C:\Windows\System32" >> "!VBS_FILE!"
+                echo oLink.IconLocation = "%ICON_FILE%" >> "!VBS_FILE!"
+                echo oLink.Save >> "!VBS_FILE!"
+                
+                cscript //nologo "!VBS_FILE!" >nul 2>&1
+                del "!VBS_FILE!" >nul 2>&1
+                
+                if exist "!LNK_FILE!" (
+                    echo [OK] Creado con VBS en !TARGET_DESK! (^!_prof!^)
+                    set /a created_count+=1
+                ) else (
+                    echo [ERROR] No se pudo crear en !TARGET_DESK! (^!_prof!^)
+                    set /a failed_count+=1
+                )
             )
         ) else (
             echo [ERROR] No existe escritorio para !_prof!
