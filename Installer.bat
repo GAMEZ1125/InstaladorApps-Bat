@@ -910,9 +910,9 @@ goto :eof
 setlocal EnableDelayedExpansion
 echo ==================================================
 echo Creando acceso directo HelpDesk Xelerica para TODOS los usuarios...
-echo URL destino: https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4
+echo URL destino: https://xelerica.servicedesk.atera.com/login
 
-set "URL=https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%2fadd&agentId=bfd8ec9f-cb38-4cc1-9d7b-f144e08f9ad4"
+set "URL=https://xelerica.servicedesk.atera.com/login"
 set "ICON_URL=https://xelerica.com/assets/images/icono.ico"
 set "ICON_FILE=%temp%\helpdesk_xelerica.ico"
 
@@ -975,6 +975,7 @@ echo --------------------------------------------------
 echo Atajos creados: !created_count!
 echo Fallidos: !failed_count!
 if !failed_count! gtr 0 set /a error_count+=!failed_count!
+
 echo Acceso directo HelpDesk Xelerica finalizado.
 endlocal & goto :eof
 
