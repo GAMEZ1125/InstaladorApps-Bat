@@ -2517,11 +2517,11 @@ if not exist "%globalprotect_msi%" (
 :: Validar tamaño del archivo
 for %%F in ("%globalprotect_msi%") do set file_size=%%~zF
 if not defined file_size (
-    echo ADVERTENCIA: No se pudo obtener el tamaño del archivo.
+    echo ADVERTENCIA: No se pudo obtener el tamano del archivo. Continuando...
 ) else (
-    echo Tamaño descargado: !file_size! bytes
+    echo Tamano descargado: !file_size! bytes
     if !file_size! LSS 1000000 (
-        echo ERROR: Archivo GlobalProtect demasiado pequeño (!file_size! bytes). Posible descarga fallida.
+        echo ERROR: Archivo GlobalProtect demasiado pequeno ^(!file_size! bytes^). Posible descarga fallida.
         del "%globalprotect_msi%" >nul 2>&1
         set /a error_count+=1
         endlocal & goto :eof
