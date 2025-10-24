@@ -2502,42 +2502,18 @@ echo ===============================================
 echo      INSTALACION DE GLOBALPROTECT
 echo ===============================================
 echo.
-set "globalprotect_url=https://descargas-xelerica.netlify.app/assets/downloads/GlobalProtect64.msi"
-set "globalprotect_msi=%temp%\GlobalProtect64.msi"
+echo Descargando e instalando GlobalProtect...
+echo [INFO] Usando curl y msiexec para instalacion directa
 
-echo Descargando GlobalProtect desde: %globalprotect_url%
-powershell -Command "try { Invoke-WebRequest -Uri '%globalprotect_url%' -OutFile '%globalprotect_msi%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
+:: Cambiar al directorio temporal
+pushd "%temp%"
 
-if not exist "%globalprotect_msi%" (
-    echo ERROR: No se pudo descargar GlobalProtect.
-    set /a error_count+=1
-    endlocal
-    goto :eof
-)
-
-:: Validar tamano del archivo
-for %%F in ("%globalprotect_msi%") do set file_size=%%~zF
-if not defined file_size (
-    echo ADVERTENCIA: No se pudo obtener el tamano del archivo. Continuando...
-) else (
-    echo Tamano descargado: !file_size! bytes
-    if !file_size! LSS 1000000 (
-        echo ERROR: Archivo GlobalProtect demasiado pequeno. Posible descarga fallida.
-        del "%globalprotect_msi%" >nul 2>&1
-        set /a error_count+=1
-        endlocal
-        goto :eof
-    )
-)
-
-echo Ejecutando instalacion silenciosa de GlobalProtect...
-:: Usar metodo directo sin start para evitar problemas de sintaxis
-"%globalprotect_msi%" /S /v"/qn"
-if !errorlevel! neq 0 (
-    :: Si falla, intentar con msiexec directo
-    msiexec.exe /i "%globalprotect_msi%" /quiet /norestart
-)
+:: Usar curl para descargar y msiexec para instalar (comando que funciona)
+curl -o GlobalProtect64.msi "https://descargas-xelerica.netlify.app/assets/downloads/GlobalProtect64.msi" && msiexec /i GlobalProtect64.msi /qn
 set install_code=!errorlevel!
+
+:: Volver al directorio original
+popd
 
 if !install_code! neq 0 (
     echo ERROR: GlobalProtect no pudo instalarse. Codigo: !install_code!
@@ -2562,6 +2538,6 @@ if !install_code! neq 0 (
 )
 
 :: Limpiar archivo temporal
-if exist "%globalprotect_msi%" del "%globalprotect_msi%"
+if exist "%temp%\GlobalProtect64.msi" del "%temp%\GlobalProtect64.msi"
 endlocal
 goto :eof
