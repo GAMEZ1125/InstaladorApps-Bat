@@ -2529,7 +2529,7 @@ if not defined file_size (
 )
 
 echo Ejecutando instalacion silenciosa de GlobalProtect...
-msiexec /i "%globalprotect_msi%" /quiet /norestart /l*v "%temp%\GlobalProtect_install.log"
+start "" /wait msiexec /i "%globalprotect_msi%" /quiet /norestart /l*v "%temp%\GlobalProtect_install.log"
 set install_code=!errorlevel!
 
 if !install_code! neq 0 (
