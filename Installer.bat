@@ -115,6 +115,7 @@ set apps[82]=UltraVNC_Choco
 set apps[83]=Add/Delete_UserGroup
 set apps[84]=Reserved_Slot_84
 set apps[85]=InstallWith_Winget_Or_Choco
+set apps[86]=GlobalProtect
 
 
 :menu
@@ -258,13 +259,13 @@ for /l %%i in (1,1,47) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,43!"
         if %%i leq 43 (
-            if %%j leq 85 (
+            if %%j leq 86 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 43 (
-            if %%j leq 85 (
+            if %%j leq 86 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -306,7 +307,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-85"
+    set "selected=1-86"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -466,6 +467,8 @@ for %%a in (%applications%) do (
         call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Helpdesk_Xelerica_OneDrive" (
         call :install_helpdesk_onedrive
+    ) else if "%%a"=="GlobalProtect" (
+        call :install_globalprotect
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1961,7 +1964,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,85) do (
+for /l %%i in (1,1,86) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -2185,6 +2188,8 @@ for %%a in (!applications!) do (
         call :install_helpdesk_xelerica_all
     ) else if "%%a"=="Helpdesk_Xelerica_OneDrive" (
         call :install_helpdesk_onedrive
+    ) else if "%%a"=="GlobalProtect" (
+        call :install_globalprotect
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -2489,3 +2494,66 @@ if !errorlevel! equ 0 (
     set install_result=1
     set /a error_count+=1
 )
+
+:install_globalprotect
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo      INSTALACION DE GLOBALPROTECT
+echo ===============================================
+echo.
+set "globalprotect_url=https://descargas-xelerica.netlify.app/assets/downloads/GlobalProtect64.msi"
+set "globalprotect_msi=%temp%\GlobalProtect64.msi"
+
+echo Descargando GlobalProtect desde: %globalprotect_url%
+powershell -Command "try { Invoke-WebRequest -Uri '%globalprotect_url%' -OutFile '%globalprotect_msi%' -UseBasicParsing } catch { Write-Host 'Error en descarga' }"
+
+if not exist "%globalprotect_msi%" (
+    echo ERROR: No se pudo descargar GlobalProtect.
+    set /a error_count+=1
+    endlocal & goto :eof
+)
+
+:: Validar tamaño del archivo
+for %%F in ("%globalprotect_msi%") do set file_size=%%~zF
+if not defined file_size (
+    echo ADVERTENCIA: No se pudo obtener el tamaño del archivo.
+) else (
+    echo Tamaño descargado: !file_size! bytes
+    if !file_size! LSS 1000000 (
+        echo ERROR: Archivo GlobalProtect demasiado pequeño (!file_size! bytes). Posible descarga fallida.
+        del "%globalprotect_msi%" >nul 2>&1
+        set /a error_count+=1
+        endlocal & goto :eof
+    )
+)
+
+echo Ejecutando instalacion silenciosa de GlobalProtect...
+msiexec /i "%globalprotect_msi%" /quiet /norestart /l*v "%temp%\GlobalProtect_install.log"
+set install_code=!errorlevel!
+
+if !install_code! neq 0 (
+    echo ERROR: GlobalProtect no pudo instalarse (codigo !install_code!).
+    echo Revise el log en: %temp%\GlobalProtect_install.log
+    set /a error_count+=1
+) else (
+    echo [EXITOSO] GlobalProtect instalado correctamente.
+    
+    :: Validar instalacion
+    if exist "%ProgramFiles%\Palo Alto Networks\GlobalProtect\PanGPA.exe" (
+        echo Validacion: GlobalProtect encontrado en Program Files
+        echo Ruta: %ProgramFiles%\Palo Alto Networks\GlobalProtect\PanGPA.exe
+    ) else if exist "%ProgramFiles(x86)%\Palo Alto Networks\GlobalProtect\PanGPA.exe" (
+        echo Validacion: GlobalProtect encontrado en Program Files (x86)
+        echo Ruta: %ProgramFiles(x86)%\Palo Alto Networks\GlobalProtect\PanGPA.exe
+    ) else (
+        echo ADVERTENCIA: No se encontro el ejecutable de GlobalProtect en las rutas esperadas.
+        echo La instalacion pudo haber fallado.
+        set /a error_count+=1
+    )
+)
+
+:: Limpiar archivo temporal
+if exist "%globalprotect_msi%" del "%globalprotect_msi%"
+endlocal
+goto :eof
