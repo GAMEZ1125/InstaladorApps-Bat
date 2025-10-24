@@ -2511,44 +2511,52 @@ powershell -Command "try { Invoke-WebRequest -Uri '%globalprotect_url%' -OutFile
 if not exist "%globalprotect_msi%" (
     echo ERROR: No se pudo descargar GlobalProtect.
     set /a error_count+=1
-    endlocal & goto :eof
+    endlocal
+    goto :eof
 )
 
-:: Validar tamaño del archivo
+:: Validar tamano del archivo
 for %%F in ("%globalprotect_msi%") do set file_size=%%~zF
 if not defined file_size (
     echo ADVERTENCIA: No se pudo obtener el tamano del archivo. Continuando...
 ) else (
     echo Tamano descargado: !file_size! bytes
     if !file_size! LSS 1000000 (
-        echo ERROR: Archivo GlobalProtect demasiado pequeno ^(!file_size! bytes^). Posible descarga fallida.
+        echo ERROR: Archivo GlobalProtect demasiado pequeno. Posible descarga fallida.
         del "%globalprotect_msi%" >nul 2>&1
         set /a error_count+=1
-        endlocal & goto :eof
+        endlocal
+        goto :eof
     )
 )
 
 echo Ejecutando instalacion silenciosa de GlobalProtect...
-start "" /wait msiexec /i "%globalprotect_msi%" /quiet /norestart /l*v "%temp%\GlobalProtect_install.log"
+:: Usar metodo directo sin start para evitar problemas de sintaxis
+"%globalprotect_msi%" /S /v"/qn"
+if !errorlevel! neq 0 (
+    :: Si falla, intentar con msiexec directo
+    msiexec.exe /i "%globalprotect_msi%" /quiet /norestart
+)
 set install_code=!errorlevel!
 
 if !install_code! neq 0 (
-    echo ERROR: GlobalProtect no pudo instalarse (codigo !install_code!).
-    echo Revise el log en: %temp%\GlobalProtect_install.log
+    echo ERROR: GlobalProtect no pudo instalarse. Codigo: !install_code!
     set /a error_count+=1
 ) else (
     echo [EXITOSO] GlobalProtect instalado correctamente.
     
     :: Validar instalacion
+    set "gp_found=0"
     if exist "%ProgramFiles%\Palo Alto Networks\GlobalProtect\PanGPA.exe" (
         echo Validacion: GlobalProtect encontrado en Program Files
-        echo Ruta: %ProgramFiles%\Palo Alto Networks\GlobalProtect\PanGPA.exe
-    ) else if exist "%ProgramFiles(x86)%\Palo Alto Networks\GlobalProtect\PanGPA.exe" (
-        echo Validacion: GlobalProtect encontrado en Program Files (x86)
-        echo Ruta: %ProgramFiles(x86)%\Palo Alto Networks\GlobalProtect\PanGPA.exe
-    ) else (
-        echo ADVERTENCIA: No se encontro el ejecutable de GlobalProtect en las rutas esperadas.
-        echo La instalacion pudo haber fallado.
+        set "gp_found=1"
+    )
+    if exist "%ProgramFiles(x86)%\Palo Alto Networks\GlobalProtect\PanGPA.exe" (
+        echo Validacion: GlobalProtect encontrado en Program Files x86
+        set "gp_found=1"
+    )
+    if "!gp_found!"=="0" (
+        echo ADVERTENCIA: No se encontro el ejecutable de GlobalProtect.
         set /a error_count+=1
     )
 )
