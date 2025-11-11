@@ -117,6 +117,7 @@ set apps[84]=Reserved_Slot_84
 set apps[85]=InstallWith_Winget_Or_Choco
 set apps[86]=GlobalProtect
 set apps[87]=Desinstalar_aplicaciones
+set apps[88]=Agente_ManageEngine
 
 
 :menu
@@ -240,6 +241,9 @@ set apps[82]=UltraVNC_Choco
 set apps[83]=Add/Delete_UserGroup
 set apps[84]=Reserved_Slot_84
 set apps[85]=InstallWith_Winget_Or_Choco
+set apps[86]=GlobalProtect
+set apps[87]=Desinstalar_aplicaciones
+set apps[88]=Agente_ManageEngine
 
 
 :menu
@@ -251,7 +255,7 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-43 y 44-85)
+:: Mostrar menu en dos columnas (1-43 y 44-88)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
 for /l %%i in (1,1,47) do (
@@ -260,13 +264,13 @@ for /l %%i in (1,1,47) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,43!"
         if %%i leq 43 (
-            if %%j leq 87 (
+            if %%j leq 88 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 43 (
-            if %%j leq 87 (
+            if %%j leq 88 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -308,7 +312,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-87"
+    set "selected=1-88"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -472,6 +476,8 @@ for %%a in (%applications%) do (
         call :install_globalprotect
     ) else if "%%a"=="Desinstalar_aplicaciones" (
         call :uninstall_applications
+    ) else if "%%a"=="Agente_ManageEngine" (
+        call :install_manageengine_agent
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
@@ -1967,7 +1973,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,87) do (
+for /l %%i in (1,1,88) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -2544,6 +2550,158 @@ if !install_code! neq 0 (
 
 :: Limpiar archivo temporal
 if exist "%temp%\GlobalProtect64.msi" del "%temp%\GlobalProtect64.msi"
+endlocal
+goto :eof
+
+:install_manageengine_agent
+setlocal EnableDelayedExpansion
+cls
+echo ==================================================
+echo    INSTALADOR DEL AGENTE MANAGEENGINE DESKTOP CENTRAL
+echo ==================================================
+echo.
+
+:ask_msi_path
+set "msi_path="
+set /p "msi_path=Ingrese la ruta completa del archivo MSI del agente (o 'C' para cancelar): "
+if /i "!msi_path!"=="C" goto cancel_manageengine
+if not defined msi_path (
+    echo.
+    echo ERROR: Debe ingresar una ruta del archivo MSI.
+    pause
+    goto ask_msi_path
+)
+
+:: Verificar que el archivo existe
+if not exist "!msi_path!" (
+    echo.
+    echo ERROR: El archivo MSI no existe en la ruta especificada.
+    echo Ruta: !msi_path!
+    pause
+    goto ask_msi_path
+)
+
+:ask_mst_path
+echo.
+echo ¿Tiene un archivo MST (Transform) para personalizar la instalación?
+set /p "use_mst=Ingrese S para sí, N para no, o C para cancelar: "
+if /i "!use_mst!"=="C" goto cancel_manageengine
+if /i "!use_mst!"=="S" (
+    set "mst_path="
+    set /p "mst_path=Ingrese la ruta completa del archivo MST: "
+    if not defined mst_path (
+        echo.
+        echo ERROR: Debe ingresar una ruta del archivo MST.
+        pause
+        goto ask_mst_path
+    )
+    if not exist "!mst_path!" (
+        echo.
+        echo ERROR: El archivo MST no existe en la ruta especificada.
+        pause
+        goto ask_mst_path
+    )
+) else if /i "!use_mst!"=="N" (
+    set "mst_path="
+) else (
+    echo.
+    echo Opción inválida. Intente nuevamente.
+    pause
+    goto ask_mst_path
+)
+
+echo.
+echo --------------------------------------------------
+echo RESUMEN DE LA INSTALACIÓN
+echo --------------------------------------------------
+echo Archivo MSI: !msi_path!
+if defined mst_path (
+    echo Archivo MST: !mst_path!
+) else (
+    echo Archivo MST: No especificado
+)
+echo.
+set /p "confirm=¿Desea continuar con la instalación? (S/N): "
+if /i not "!confirm!"=="S" goto cancel_manageengine
+
+echo.
+echo --------------------------------------------------
+echo Iniciando instalación del agente ManageEngine...
+echo --------------------------------------------------
+
+:: Crear script de PowerShell temporal
+set "ps_script=%temp%\install_manageengine.ps1"
+echo # Script de instalación de Desktop Central Agent en PowerShell > "!ps_script!"
+echo. >> "!ps_script!"
+echo param ( >> "!ps_script!"
+echo     [string]$msiPath, >> "!ps_script!"
+echo     [string]$mstPath = $null >> "!ps_script!"
+echo ^) >> "!ps_script!"
+echo. >> "!ps_script!"
+echo # Obtener el drive de sistema >> "!ps_script!"
+echo $drivePath = $Env:SYSTEMDRIVE >> "!ps_script!"
+echo. >> "!ps_script!"
+echo # Detectar arquitectura del SO >> "!ps_script!"
+echo $checkOSArch = ^(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"^).PROCESSOR_ARCHITECTURE >> "!ps_script!"
+echo. >> "!ps_script!"
+echo # Determinar clave de registro según arquitectura >> "!ps_script!"
+echo if ^($checkOSArch -eq "x86"^) { >> "!ps_script!"
+echo     $regkey = "HKLM:\SOFTWARE\AdventNet\DesktopCentral\DCAgent" >> "!ps_script!"
+echo } else { >> "!ps_script!"
+echo     $regkey = "HKLM:\SOFTWARE\Wow6432Node\AdventNet\DesktopCentral\DCAgent" >> "!ps_script!"
+echo } >> "!ps_script!"
+echo. >> "!ps_script!"
+echo try { >> "!ps_script!"
+echo     $agentVersion = Get-ItemPropertyValue -Path $regkey -Name "DCAgentVersion" >> "!ps_script!"
+echo } catch { >> "!ps_script!"
+echo     $agentVersion = $null >> "!ps_script!"
+echo } >> "!ps_script!"
+echo. >> "!ps_script!"
+echo # Construir comando msiexec >> "!ps_script!"
+echo if ^($mstPath^) { >> "!ps_script!"
+echo     $arguments = "/i `"$msiPath`" TRANSFORMS=`"$mstPath`" ENABLESILENT=yes REBOOT=ReallySuppress /qn MSIRESTARTMANAGERCONTROL=Disable /lv $drivePath\dcagentInstaller.log" >> "!ps_script!"
+echo } else { >> "!ps_script!"
+echo     $arguments = "/i `"$msiPath`" ENABLESILENT=yes REBOOT=ReallySuppress /qn MSIRESTARTMANAGERCONTROL=Disable /lv $drivePath\dcagentInstaller.log" >> "!ps_script!"
+echo } >> "!ps_script!"
+echo. >> "!ps_script!"
+echo # Ejecutar msiexec >> "!ps_script!"
+echo Start-Process -FilePath "msiexec.exe" -ArgumentList $arguments -NoNewWindow -Wait >> "!ps_script!"
+
+:: Ejecutar el script de PowerShell
+if defined mst_path (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "!ps_script!" -msiPath "!msi_path!" -mstPath "!mst_path!"
+) else (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "!ps_script!" -msiPath "!msi_path!"
+)
+
+set "exit_code=!errorlevel!"
+
+:: Limpiar script temporal
+if exist "!ps_script!" del "!ps_script!"
+
+if !exit_code! equ 0 (
+    echo.
+    echo [ÉXITO] Agente ManageEngine Desktop Central instalado correctamente.
+    echo.
+    echo Log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+) else (
+    echo.
+    echo [ERROR] No se pudo instalar el agente. Código de error: !exit_code!
+    echo.
+    echo Revise el log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+    set /a error_count+=1
+)
+echo.
+pause
+goto end_manageengine
+
+:cancel_manageengine
+echo.
+echo Instalación cancelada.
+pause
+goto end_manageengine
+
+:end_manageengine
 endlocal
 goto :eof
 
