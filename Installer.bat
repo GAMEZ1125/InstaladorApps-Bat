@@ -2565,13 +2565,13 @@ echo Desktop Central de forma silenciosa.
 echo.
 echo EJEMPLOS DE URLs VALIDAS:
 echo.
-echo [1] Servidor oficial ManageEngine:
+echo ^[1^] Servidor oficial ManageEngine:
 echo     https://desktopcentral.manageengine.com/download?encapiKey=wSsVR60kqxL4Xa9%%2BnWalduptygtXVlnyRk9%%2F0VX16XSuHv2Tpsdqk0DJA1fyGKMeGWQ9EGEa8u14nUwGhjpb2twsnlwDCiiF9mqRe1U4J3x19L%%2B%%2Fnj7DXjw%%3D^&os=Windows
 echo.
-echo [2] Servidor alternativo Xelerica:
+echo ^[2^] Servidor alternativo Xelerica:
 echo     https://descargas-xelerica.netlify.app/assets/downloads/DefaultRemoteOffice_Agent11-25.exe
 echo.
-echo [E] Para usar ejemplo 1 | [X] Para usar ejemplo 2 | [C] Cancelar
+echo ^[E^] Para usar ejemplo 1 ^| ^[X^] Para usar ejemplo 2 ^| ^[C^] Cancelar
 echo.
 
 :ask_msi_url
