@@ -2560,135 +2560,245 @@ echo ==================================================
 echo    INSTALADOR DEL AGENTE MANAGEENGINE DESKTOP CENTRAL
 echo ==================================================
 echo.
-
-:ask_msi_path
-set "msi_path="
-set /p "msi_path=Ingrese la ruta completa del archivo MSI del agente (o 'C' para cancelar): "
-if /i "!msi_path!"=="C" goto cancel_manageengine
-if not defined msi_path (
-    echo.
-    echo ERROR: Debe ingresar una ruta del archivo MSI.
-    pause
-    goto ask_msi_path
-)
-
-:: Verificar que el archivo existe
-if not exist "!msi_path!" (
-    echo.
-    echo ERROR: El archivo MSI no existe en la ruta especificada.
-    echo Ruta: !msi_path!
-    pause
-    goto ask_msi_path
-)
-
-:ask_mst_path
+echo Esta herramienta descarga e instala el agente ManageEngine
+echo Desktop Central de forma silenciosa.
 echo.
-echo ¿Tiene un archivo MST (Transform) para personalizar la instalación?
+echo EJEMPLOS DE URLs VALIDAS:
+echo.
+echo [1] Servidor oficial ManageEngine:
+echo     https://desktopcentral.manageengine.com/download?encapiKey=wSsVR60kqxL4Xa9%%2BnWalduptygtXVlnyRk9%%2F0VX16XSuHv2Tpsdqk0DJA1fyGKMeGWQ9EGEa8u14nUwGhjpb2twsnlwDCiiF9mqRe1U4J3x19L%%2B%%2Fnj7DXjw%%3D^&os=Windows
+echo.
+echo [2] Servidor alternativo Xelerica:
+echo     https://descargas-xelerica.netlify.app/assets/downloads/DefaultRemoteOffice_Agent11-25.exe
+echo.
+echo [E] Para usar ejemplo 1 | [X] Para usar ejemplo 2 | [C] Cancelar
+echo.
+
+:ask_msi_url
+set "msi_url="
+set /p "msi_url=Ingrese la URL de descarga del agente (E/X para ejemplos, C para cancelar): "
+if /i "!msi_url!"=="C" goto cancel_manageengine
+if /i "!msi_url!"=="E" (
+    set "msi_url=https://desktopcentral.manageengine.com/download?encapiKey=wSsVR60kqxL4Xa9%%2BnWalduptygtXVlnyRk9%%2F0VX16XSuHv2Tpsdqk0DJA1fyGKMeGWQ9EGEa8u14nUwGhjpb2twsnlwDCiiF9mqRe1U4J3x19L%%2B%%2Fnj7DXjw%%3D&os=Windows"
+    echo URL del ejemplo 1 seleccionada.
+    goto validate_url
+)
+if /i "!msi_url!"=="X" (
+    set "msi_url=https://descargas-xelerica.netlify.app/assets/downloads/DefaultRemoteOffice_Agent11-25.exe"
+    echo URL del ejemplo 2 seleccionada.
+    goto validate_url
+)
+if not defined msi_url (
+    echo.
+    echo ERROR: Debe ingresar una URL de descarga, usar un ejemplo (E/X), o cancelar (C).
+    pause
+    goto ask_msi_url
+)
+
+:validate_url
+:: Validar que la URL parece válida (contiene http)
+echo !msi_url! | findstr /i "http" >nul
+if !errorlevel! neq 0 (
+    echo.
+    echo ERROR: La URL debe comenzar con http:// o https://
+    echo URL ingresada: !msi_url!
+    pause
+    goto ask_msi_url
+)
+
+:ask_mst_url
+echo.
+echo ¿Tiene una URL de descarga para un archivo MST (Transform)?
+echo El archivo MST permite personalizar la instalación.
+echo.
 set /p "use_mst=Ingrese S para sí, N para no, o C para cancelar: "
 if /i "!use_mst!"=="C" goto cancel_manageengine
 if /i "!use_mst!"=="S" (
-    set "mst_path="
-    set /p "mst_path=Ingrese la ruta completa del archivo MST: "
-    if not defined mst_path (
+    set "mst_url="
+    set /p "mst_url=Ingrese la URL de descarga del archivo MST: "
+    if not defined mst_url (
         echo.
-        echo ERROR: Debe ingresar una ruta del archivo MST.
+        echo ERROR: Debe ingresar una URL del archivo MST.
         pause
-        goto ask_mst_path
+        goto ask_mst_url
     )
-    if not exist "!mst_path!" (
+    :: Validar que la URL del MST parece válida
+    echo !mst_url! | findstr /i "http" >nul
+    if !errorlevel! neq 0 (
         echo.
-        echo ERROR: El archivo MST no existe en la ruta especificada.
+        echo ERROR: La URL del MST debe comenzar con http:// o https://
+        echo URL ingresada: !mst_url!
         pause
-        goto ask_mst_path
+        goto ask_mst_url
     )
 ) else if /i "!use_mst!"=="N" (
-    set "mst_path="
+    set "mst_url="
 ) else (
     echo.
     echo Opción inválida. Intente nuevamente.
     pause
-    goto ask_mst_path
+    goto ask_mst_url
 )
 
 echo.
 echo --------------------------------------------------
 echo RESUMEN DE LA INSTALACIÓN
 echo --------------------------------------------------
-echo Archivo MSI: !msi_path!
-if defined mst_path (
-    echo Archivo MST: !mst_path!
+echo URL del agente: !msi_url!
+if defined mst_url (
+    echo URL del MST: !mst_url!
 ) else (
     echo Archivo MST: No especificado
 )
 echo.
-set /p "confirm=¿Desea continuar con la instalación? (S/N): "
+set /p "confirm=¿Desea continuar con la descarga e instalación? (S/N): "
 if /i not "!confirm!"=="S" goto cancel_manageengine
+
+:: Detectar tipo de archivo por la URL
+echo !msi_url! | findstr /i "\.msi" >nul
+if !errorlevel! equ 0 (
+    set "agent_file=%temp%\ManageEngineAgent.msi"
+    set "file_type=MSI"
+) else (
+    set "agent_file=%temp%\ManageEngineAgent.exe"
+    set "file_type=EXE"
+)
+set "mst_file=%temp%\ManageEngineAgent.mst"
+
+echo.
+echo --------------------------------------------------
+echo Descargando archivos...
+echo --------------------------------------------------
+
+:: Descargar archivo del agente
+echo Descargando agente (!file_type!) desde: !msi_url!
+powershell -NoProfile -Command "(New-Object System.Net.WebClient).DownloadFile('!msi_url!', '!agent_file!')"
+if !errorlevel! neq 0 (
+    echo.
+    echo [ERROR] No se pudo descargar el archivo del agente.
+    echo Verifique la URL y su conexión a internet.
+    set /a error_count+=1
+    pause
+    goto cancel_manageengine
+)
+
+if not exist "!agent_file!" (
+    echo.
+    echo [ERROR] El archivo del agente no se descargó correctamente.
+    set /a error_count+=1
+    pause
+    goto cancel_manageengine
+)
+
+echo [OK] Agente (!file_type!) descargado correctamente.
+
+:: Descargar archivo MST si se especificó
+if defined mst_url (
+    echo Descargando MST desde: !mst_url!
+    powershell -NoProfile -Command "(New-Object System.Net.WebClient).DownloadFile('!mst_url!', '!mst_file!')"
+    if !errorlevel! neq 0 (
+        echo.
+        echo [ADVERTENCIA] No se pudo descargar el archivo MST.
+        echo Continuando sin archivo MST...
+        set "mst_file="
+    ) else if not exist "!mst_file!" (
+        echo.
+        echo [ADVERTENCIA] El archivo MST no se descargó correctamente.
+        echo Continuando sin archivo MST...
+        set "mst_file="
+    ) else (
+        echo [OK] MST descargado correctamente.
+    )
+)
 
 echo.
 echo --------------------------------------------------
 echo Iniciando instalación del agente ManageEngine...
 echo --------------------------------------------------
 
-:: Crear script de PowerShell temporal
-set "ps_script=%temp%\install_manageengine.ps1"
-echo # Script de instalación de Desktop Central Agent en PowerShell > "!ps_script!"
-echo. >> "!ps_script!"
-echo param ( >> "!ps_script!"
-echo     [string]$msiPath, >> "!ps_script!"
-echo     [string]$mstPath = $null >> "!ps_script!"
-echo ^) >> "!ps_script!"
-echo. >> "!ps_script!"
-echo # Obtener el drive de sistema >> "!ps_script!"
-echo $drivePath = $Env:SYSTEMDRIVE >> "!ps_script!"
-echo. >> "!ps_script!"
-echo # Detectar arquitectura del SO >> "!ps_script!"
-echo $checkOSArch = ^(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"^).PROCESSOR_ARCHITECTURE >> "!ps_script!"
-echo. >> "!ps_script!"
-echo # Determinar clave de registro según arquitectura >> "!ps_script!"
-echo if ^($checkOSArch -eq "x86"^) { >> "!ps_script!"
-echo     $regkey = "HKLM:\SOFTWARE\AdventNet\DesktopCentral\DCAgent" >> "!ps_script!"
-echo } else { >> "!ps_script!"
-echo     $regkey = "HKLM:\SOFTWARE\Wow6432Node\AdventNet\DesktopCentral\DCAgent" >> "!ps_script!"
-echo } >> "!ps_script!"
-echo. >> "!ps_script!"
-echo try { >> "!ps_script!"
-echo     $agentVersion = Get-ItemPropertyValue -Path $regkey -Name "DCAgentVersion" >> "!ps_script!"
-echo } catch { >> "!ps_script!"
-echo     $agentVersion = $null >> "!ps_script!"
-echo } >> "!ps_script!"
-echo. >> "!ps_script!"
-echo # Construir comando msiexec >> "!ps_script!"
-echo if ^($mstPath^) { >> "!ps_script!"
-echo     $arguments = "/i `"$msiPath`" TRANSFORMS=`"$mstPath`" ENABLESILENT=yes REBOOT=ReallySuppress /qn MSIRESTARTMANAGERCONTROL=Disable /lv $drivePath\dcagentInstaller.log" >> "!ps_script!"
-echo } else { >> "!ps_script!"
-echo     $arguments = "/i `"$msiPath`" ENABLESILENT=yes REBOOT=ReallySuppress /qn MSIRESTARTMANAGERCONTROL=Disable /lv $drivePath\dcagentInstaller.log" >> "!ps_script!"
-echo } >> "!ps_script!"
-echo. >> "!ps_script!"
-echo # Ejecutar msiexec >> "!ps_script!"
-echo Start-Process -FilePath "msiexec.exe" -ArgumentList $arguments -NoNewWindow -Wait >> "!ps_script!"
-
-:: Ejecutar el script de PowerShell
-if defined mst_path (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "!ps_script!" -msiPath "!msi_path!" -mstPath "!mst_path!"
+:: Instalar según el tipo de archivo
+if "!file_type!"=="EXE" (
+    :: Instalación EXE silenciosa
+    echo Ejecutando instalación EXE silenciosa...
+    "!agent_file!" /S
+    set "exit_code=!errorlevel!"
 ) else (
-    powershell -NoProfile -ExecutionPolicy Bypass -File "!ps_script!" -msiPath "!msi_path!"
+    :: Instalación MSI con PowerShell script
+    echo Ejecutando instalación MSI con script PowerShell...
+    
+    :: Crear script de PowerShell temporal
+    set "ps_script=%temp%\install_manageengine.ps1"
+    echo # Script de instalación de Desktop Central Agent en PowerShell > "!ps_script!"
+    echo. >> "!ps_script!"
+    echo param ( >> "!ps_script!"
+    echo     [string]$msiPath, >> "!ps_script!"
+    echo     [string]$mstPath = $null >> "!ps_script!"
+    echo ^) >> "!ps_script!"
+    echo. >> "!ps_script!"
+    echo # Obtener el drive de sistema >> "!ps_script!"
+    echo $drivePath = $Env:SYSTEMDRIVE >> "!ps_script!"
+    echo. >> "!ps_script!"
+    echo # Detectar arquitectura del SO >> "!ps_script!"
+    echo $checkOSArch = ^(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"^).PROCESSOR_ARCHITECTURE >> "!ps_script!"
+    echo. >> "!ps_script!"
+    echo # Determinar clave de registro según arquitectura >> "!ps_script!"
+    echo if ^($checkOSArch -eq "x86"^) { >> "!ps_script!"
+    echo     $regkey = "HKLM:\SOFTWARE\AdventNet\DesktopCentral\DCAgent" >> "!ps_script!"
+    echo } else { >> "!ps_script!"
+    echo     $regkey = "HKLM:\SOFTWARE\Wow6432Node\AdventNet\DesktopCentral\DCAgent" >> "!ps_script!"
+    echo } >> "!ps_script!"
+    echo. >> "!ps_script!"
+    echo try { >> "!ps_script!"
+    echo     $agentVersion = Get-ItemPropertyValue -Path $regkey -Name "DCAgentVersion" >> "!ps_script!"
+    echo } catch { >> "!ps_script!"
+    echo     $agentVersion = $null >> "!ps_script!"
+    echo } >> "!ps_script!"
+    echo. >> "!ps_script!"
+    echo # Construir comando msiexec >> "!ps_script!"
+    echo if ^($mstPath^) { >> "!ps_script!"
+    echo     $arguments = "/i `"$msiPath`" TRANSFORMS=`"$mstPath`" ENABLESILENT=yes REBOOT=ReallySuppress /qn MSIRESTARTMANAGERCONTROL=Disable /lv $drivePath\dcagentInstaller.log" >> "!ps_script!"
+    echo } else { >> "!ps_script!"
+    echo     $arguments = "/i `"$msiPath`" ENABLESILENT=yes REBOOT=ReallySuppress /qn MSIRESTARTMANAGERCONTROL=Disable /lv $drivePath\dcagentInstaller.log" >> "!ps_script!"
+    echo } >> "!ps_script!"
+    echo. >> "!ps_script!"
+    echo # Ejecutar msiexec >> "!ps_script!"
+    echo Start-Process -FilePath "msiexec.exe" -ArgumentList $arguments -NoNewWindow -Wait >> "!ps_script!"
+
+    :: Ejecutar el script de PowerShell
+    if defined mst_file (
+        if exist "!mst_file!" (
+            powershell -NoProfile -ExecutionPolicy Bypass -File "!ps_script!" -msiPath "!agent_file!" -mstPath "!mst_file!"
+        ) else (
+            powershell -NoProfile -ExecutionPolicy Bypass -File "!ps_script!" -msiPath "!agent_file!"
+        )
+    ) else (
+        powershell -NoProfile -ExecutionPolicy Bypass -File "!ps_script!" -msiPath "!agent_file!"
+    )
+    set "exit_code=!errorlevel!"
+    
+    :: Limpiar script PowerShell
+    if exist "!ps_script!" del "!ps_script!"
 )
 
-set "exit_code=!errorlevel!"
-
-:: Limpiar script temporal
-if exist "!ps_script!" del "!ps_script!"
+:: Limpiar archivos temporales
+if exist "!agent_file!" del "!agent_file!"
+if exist "!mst_file!" del "!mst_file!"
 
 if !exit_code! equ 0 (
     echo.
     echo [ÉXITO] Agente ManageEngine Desktop Central instalado correctamente.
     echo.
-    echo Log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+    if "!file_type!"=="MSI" (
+        echo Log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+    )
+    echo Archivos temporales limpiados.
 ) else (
     echo.
     echo [ERROR] No se pudo instalar el agente. Código de error: !exit_code!
     echo.
-    echo Revise el log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+    if "!file_type!"=="MSI" (
+        echo Revise el log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+    )
     set /a error_count+=1
 )
 echo.
@@ -2698,6 +2808,9 @@ goto end_manageengine
 :cancel_manageengine
 echo.
 echo Instalación cancelada.
+:: Limpiar archivos si existen
+if exist "!agent_file!" del "!agent_file!"
+if exist "!mst_file!" del "!mst_file!"
 pause
 goto end_manageengine
 
