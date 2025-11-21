@@ -479,7 +479,7 @@ for %%a in (%applications%) do (
     ) else if "%%a"=="Desinstalar_aplicaciones" (
         call :uninstall_applications
     ) else if "%%a"=="Gradle-8.11.zip" (
-        call :install_gradle_fast "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
+        call :install_zip "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
     ) else if "%%a"=="Agente_ManageEngine" (
         call :install_manageengine_agent
     ) else (
@@ -627,46 +627,6 @@ if /i "%dest%"=="C:\IBMiAccess_v1r1" (
         echo ERROR: Directorio de JMeter no encontrado en "!jmeter_home!"
         set /a error_count+=1
     )
-)
-
-goto :eof
-
-:install_gradle_fast
-set url=%~1
-set dest=%~2
-set zipfile=%temp%\gradle-8.11-all.zip
-
-echo [GRADLE FAST] Descargando Gradle 8.11 con curl (metodo rapido)...
-curl -L -o "%zipfile%" "%url%" --progress-bar --connect-timeout 30
-if not exist "%zipfile%" (
-    echo ERROR: Fallo en la descarga con curl
-    set /a error_count+=1
-    goto :eof
-)
-
-echo [GRADLE FAST] Extrayendo en %dest%...
-if not exist "%dest%" mkdir "%dest%"
-
-:: Usar tar que es más rápido y confiable
-tar -xf "%zipfile%" -C "%dest%" 2>nul
-if !errorlevel! neq 0 (
-    echo [GRADLE FAST] Tar fallo, usando PowerShell como respaldo...
-    powershell -Command "Expand-Archive -Path '%zipfile%' -DestinationPath '%dest%' -Force"
-    if !errorlevel! neq 0 (
-        echo ERROR: Falló la extracción
-        set /a error_count+=1
-        if exist "%zipfile%" del "%zipfile%"
-        goto :eof
-    )
-)
-
-if exist "%zipfile%" del "%zipfile%"
-echo [GRADLE FAST] Gradle 8.11 instalado correctamente en %dest%
-
-:: Configurar variables de entorno si es necesario
-for /d %%i in ("%dest%\gradle-*") do (
-    set "GRADLE_HOME=%%i"
-    echo [GRADLE FAST] GRADLE_HOME configurado en: %%i
 )
 
 goto :eof
@@ -2246,7 +2206,7 @@ for %%a in (!applications!) do (
     ) else if "%%a"=="Desinstalar_aplicaciones" (
         call :uninstall_applications
     ) else if "%%a"=="Gradle-8.11.zip" (
-        call :install_gradle_fast "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
+        call :install_zip "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
