@@ -118,7 +118,6 @@ set apps[85]=InstallWith_Winget_Or_Choco
 set apps[86]=GlobalProtect
 set apps[87]=Desinstalar_aplicaciones
 set apps[88]=Agente_ManageEngine
-set apps[89]=Gradle-8.11.zip
 
 
 :menu
@@ -245,7 +244,6 @@ set apps[85]=InstallWith_Winget_Or_Choco
 set apps[86]=GlobalProtect
 set apps[87]=Desinstalar_aplicaciones
 set apps[88]=Agente_ManageEngine
-set apps[89]=Gradle-8.11.zip
 
 
 :menu
@@ -266,13 +264,13 @@ for /l %%i in (1,1,47) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,43!"
         if %%i leq 43 (
-            if %%j leq 89 (
+            if %%j leq 88 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
         ) else if %%i gtr 43 (
-            if %%j leq 89 (
+            if %%j leq 88 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -314,7 +312,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-89"
+    set "selected=1-88"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -478,8 +476,6 @@ for %%a in (%applications%) do (
         call :install_globalprotect
     ) else if "%%a"=="Desinstalar_aplicaciones" (
         call :uninstall_applications
-    ) else if "%%a"=="Gradle-8.11.zip" (
-        call :install_zip "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
     ) else if "%%a"=="Agente_ManageEngine" (
         call :install_manageengine_agent
     ) else (
@@ -1977,7 +1973,7 @@ set "found_count=0"
 set "found_apps="
 set "found_numbers="
 
-for /l %%i in (1,1,89) do (
+for /l %%i in (1,1,88) do (
     if defined apps[%%i] (
         set "app_name=!apps[%%i]!"
         echo !app_name! | findstr /i "!search_term!" >nul
@@ -2205,8 +2201,6 @@ for %%a in (!applications!) do (
         call :install_globalprotect
     ) else if "%%a"=="Desinstalar_aplicaciones" (
         call :uninstall_applications
-    ) else if "%%a"=="Gradle-8.11.zip" (
-        call :install_zip "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
