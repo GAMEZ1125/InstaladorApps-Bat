@@ -500,6 +500,186 @@ echo Aplicaciones instaladas: %application_count%
 echo Errores: %error_count%
 if %error_count% gtr 0 echo Verifique los errores e intente instalar manualmente.
 pause
+goto :eof
+
+:uninstall_applications
+setlocal enabledelayedexpansion
+echo.
+echo ===============================================
+echo      DESINSTALADOR DE APLICACIONES
+echo ===============================================
+echo.
+echo Este modulo permite desinstalar aplicaciones instaladas via:
+echo [1] Winget (Microsoft Package Manager)
+echo [2] Chocolatey (Community Package Manager)
+echo.
+
+:uninstall_menu
+echo Seleccione una opcion:
+echo.
+echo [1] Ver aplicaciones instaladas con Winget
+echo [2] Ver aplicaciones instaladas con Chocolatey
+echo [3] Desinstalar aplicacion via Winget
+echo [4] Desinstalar aplicacion via Chocolatey
+echo [5] Volver al menu principal
+echo.
+set /p "uninstall_choice=Seleccione una opcion (1-5): "
+
+if "!uninstall_choice!"=="1" (
+    call :list_winget_apps
+    goto uninstall_menu
+) else if "!uninstall_choice!"=="2" (
+    call :list_choco_apps
+    goto uninstall_menu
+) else if "!uninstall_choice!"=="3" (
+    call :uninstall_winget_app
+    goto uninstall_menu
+) else if "!uninstall_choice!"=="4" (
+    call :uninstall_choco_app
+    goto uninstall_menu
+) else if "!uninstall_choice!"=="5" (
+    endlocal
+    goto :eof
+) else (
+    echo Opcion invalida. Intente nuevamente.
+    timeout /t 2 >nul
+    goto uninstall_menu
+)
+
+:list_winget_apps
+echo.
+echo ===============================================
+echo   APLICACIONES INSTALADAS CON WINGET
+echo ===============================================
+echo.
+echo Obteniendo lista de aplicaciones instaladas...
+"%wingetPath%" list --accept-source-agreements 2>nul | findstr /v "^$" | more
+echo.
+echo Presione cualquier tecla para continuar...
+pause >nul
+goto :eof
+
+:list_choco_apps
+echo.
+echo ===============================================
+echo   APLICACIONES INSTALADAS CON CHOCOLATEY
+echo ===============================================
+echo.
+where choco >nul 2>&1
+if !errorlevel! neq 0 (
+    echo Chocolatey no esta instalado en el sistema.
+    echo Presione cualquier tecla para continuar...
+    pause >nul
+    goto :eof
+)
+echo Obteniendo lista de aplicaciones instaladas...
+choco list --local-only 2>nul | findstr /v "^$" | more
+echo.
+echo Presione cualquier tecla para continuar...
+pause >nul
+goto :eof
+
+:uninstall_winget_app
+echo.
+echo ===============================================
+echo    DESINSTALAR APLICACION VIA WINGET
+echo ===============================================
+echo.
+echo Aplicaciones disponibles para desinstalar:
+echo.
+"%wingetPath%" list --accept-source-agreements 2>nul | findstr /v "^$"
+echo.
+set /p "winget_app_id=Ingrese el ID exacto de la aplicacion a desinstalar (o 'cancelar'): "
+
+if /i "!winget_app_id!"=="cancelar" (
+    echo Operacion cancelada.
+    timeout /t 1 >nul
+    goto :eof
+)
+
+if "!winget_app_id!"=="" (
+    echo ID de aplicacion no valido.
+    timeout /t 2 >nul
+    goto :eof
+)
+
+echo.
+echo Desinstalando: !winget_app_id!
+echo.
+choice /C SN /N /M "Esta seguro que desea desinstalar '!winget_app_id!'? [S]i [N]o: "
+if !errorlevel! equ 2 (
+    echo Operacion cancelada.
+    timeout /t 1 >nul
+    goto :eof
+)
+
+echo Ejecutando desinstalacion...
+"%wingetPath%" uninstall --id "!winget_app_id!" --silent --accept-source-agreements
+if !errorlevel! equ 0 (
+    echo [EXITOSO] Aplicacion desinstalada correctamente.
+) else (
+    echo [ERROR] No se pudo desinstalar la aplicacion.
+)
+echo.
+echo Presione cualquier tecla para continuar...
+pause >nul
+goto :eof
+
+:uninstall_choco_app
+echo.
+echo ===============================================
+echo   DESINSTALAR APLICACION VIA CHOCOLATEY
+echo ===============================================
+echo.
+where choco >nul 2>&1
+if !errorlevel! neq 0 (
+    echo Chocolatey no esta instalado en el sistema.
+    echo No se pueden desinstalar aplicaciones via Chocolatey.
+    echo Presione cualquier tecla para continuar...
+    pause >nul
+    goto :eof
+)
+
+echo Aplicaciones instaladas con Chocolatey:
+echo.
+choco list --local-only 2>nul
+echo.
+set /p "choco_app_name=Ingrese el nombre exacto del paquete a desinstalar (o 'cancelar'): "
+
+if /i "!choco_app_name!"=="cancelar" (
+    echo Operacion cancelada.
+    timeout /t 1 >nul
+    goto :eof
+)
+
+if "!choco_app_name!"=="" (
+    echo Nombre de paquete no valido.
+    timeout /t 2 >nul
+    goto :eof
+)
+
+echo.
+echo Desinstalando: !choco_app_name!
+echo.
+choice /C SN /N /M "Esta seguro que desea desinstalar '!choco_app_name!'? [S]i [N]o: "
+if !errorlevel! equ 2 (
+    echo Operacion cancelada.
+    timeout /t 1 >nul
+    goto :eof
+)
+
+echo Ejecutando desinstalacion...
+choco uninstall "!choco_app_name!" -y
+if !errorlevel! equ 0 (
+    echo [EXITOSO] Paquete desinstalado correctamente.
+) else (
+    echo [ERROR] No se pudo desinstalar el paquete.
+)
+echo.
+echo Presione cualquier tecla para continuar...
+pause >nul
+goto :eof
+
 exit /b
 
 :: ======== TODAS LAS FUNCIONES DEBEN IR AQUÍ ========
@@ -2822,182 +3002,4 @@ goto end_manageengine
 
 :end_manageengine
 endlocal
-goto :eof
-
-:uninstall_applications
-setlocal enabledelayedexpansion
-echo.
-echo ===============================================
-echo      DESINSTALADOR DE APLICACIONES
-echo ===============================================
-echo.
-echo Este modulo permite desinstalar aplicaciones instaladas via:
-echo [1] Winget (Microsoft Package Manager)
-echo [2] Chocolatey (Community Package Manager)
-echo.
-
-:uninstall_menu
-echo Seleccione una opcion:
-echo.
-echo [1] Ver aplicaciones instaladas con Winget
-echo [2] Ver aplicaciones instaladas con Chocolatey
-echo [3] Desinstalar aplicacion via Winget
-echo [4] Desinstalar aplicacion via Chocolatey
-echo [5] Volver al menu principal
-echo.
-set /p "uninstall_choice=Seleccione una opcion (1-5): "
-
-if "!uninstall_choice!"=="1" (
-    call :list_winget_apps
-    goto uninstall_menu
-) else if "!uninstall_choice!"=="2" (
-    call :list_choco_apps
-    goto uninstall_menu
-) else if "!uninstall_choice!"=="3" (
-    call :uninstall_winget_app
-    goto uninstall_menu
-) else if "!uninstall_choice!"=="4" (
-    call :uninstall_choco_app
-    goto uninstall_menu
-) else if "!uninstall_choice!"=="5" (
-    endlocal
-    goto :eof
-) else (
-    echo Opcion invalida. Intente nuevamente.
-    timeout /t 2 >nul
-    goto uninstall_menu
-)
-
-:list_winget_apps
-echo.
-echo ===============================================
-echo   APLICACIONES INSTALADAS CON WINGET
-echo ===============================================
-echo.
-echo Obteniendo lista de aplicaciones instaladas...
-"%wingetPath%" list --accept-source-agreements 2>nul | findstr /v "^$" | more
-echo.
-echo Presione cualquier tecla para continuar...
-pause >nul
-goto :eof
-
-:list_choco_apps
-echo.
-echo ===============================================
-echo   APLICACIONES INSTALADAS CON CHOCOLATEY
-echo ===============================================
-echo.
-where choco >nul 2>&1
-if !errorlevel! neq 0 (
-    echo Chocolatey no esta instalado en el sistema.
-    echo Presione cualquier tecla para continuar...
-    pause >nul
-    goto :eof
-)
-echo Obteniendo lista de aplicaciones instaladas...
-choco list --local-only 2>nul | findstr /v "^$" | more
-echo.
-echo Presione cualquier tecla para continuar...
-pause >nul
-goto :eof
-
-:uninstall_winget_app
-echo.
-echo ===============================================
-echo    DESINSTALAR APLICACION VIA WINGET
-echo ===============================================
-echo.
-echo Aplicaciones disponibles para desinstalar:
-echo.
-"%wingetPath%" list --accept-source-agreements 2>nul | findstr /v "^$"
-echo.
-set /p "winget_app_id=Ingrese el ID exacto de la aplicacion a desinstalar (o 'cancelar'): "
-
-if /i "!winget_app_id!"=="cancelar" (
-    echo Operacion cancelada.
-    timeout /t 1 >nul
-    goto :eof
-)
-
-if "!winget_app_id!"=="" (
-    echo ID de aplicacion no valido.
-    timeout /t 2 >nul
-    goto :eof
-)
-
-echo.
-echo Desinstalando: !winget_app_id!
-echo.
-choice /C SN /N /M "Esta seguro que desea desinstalar '!winget_app_id!'? [S]i [N]o: "
-if !errorlevel! equ 2 (
-    echo Operacion cancelada.
-    timeout /t 1 >nul
-    goto :eof
-)
-
-echo Ejecutando desinstalacion...
-"%wingetPath%" uninstall --id "!winget_app_id!" --silent --accept-source-agreements
-if !errorlevel! equ 0 (
-    echo [EXITOSO] Aplicacion desinstalada correctamente.
-) else (
-    echo [ERROR] No se pudo desinstalar la aplicacion.
-)
-echo.
-echo Presione cualquier tecla para continuar...
-pause >nul
-goto :eof
-
-:uninstall_choco_app
-echo.
-echo ===============================================
-echo   DESINSTALAR APLICACION VIA CHOCOLATEY
-echo ===============================================
-echo.
-where choco >nul 2>&1
-if !errorlevel! neq 0 (
-    echo Chocolatey no esta instalado en el sistema.
-    echo No se pueden desinstalar aplicaciones via Chocolatey.
-    echo Presione cualquier tecla para continuar...
-    pause >nul
-    goto :eof
-)
-
-echo Aplicaciones instaladas con Chocolatey:
-echo.
-choco list --local-only 2>nul
-echo.
-set /p "choco_app_name=Ingrese el nombre exacto del paquete a desinstalar (o 'cancelar'): "
-
-if /i "!choco_app_name!"=="cancelar" (
-    echo Operacion cancelada.
-    timeout /t 1 >nul
-    goto :eof
-)
-
-if "!choco_app_name!"=="" (
-    echo Nombre de paquete no valido.
-    timeout /t 2 >nul
-    goto :eof
-)
-
-echo.
-echo Desinstalando: !choco_app_name!
-echo.
-choice /C SN /N /M "Esta seguro que desea desinstalar '!choco_app_name!'? [S]i [N]o: "
-if !errorlevel! equ 2 (
-    echo Operacion cancelada.
-    timeout /t 1 >nul
-    goto :eof
-)
-
-echo Ejecutando desinstalacion...
-choco uninstall "!choco_app_name!" -y
-if !errorlevel! equ 0 (
-    echo [EXITOSO] Paquete desinstalado correctamente.
-) else (
-    echo [ERROR] No se pudo desinstalar el paquete.
-)
-echo.
-echo Presione cualquier tecla para continuar...
-pause >nul
 goto :eof
