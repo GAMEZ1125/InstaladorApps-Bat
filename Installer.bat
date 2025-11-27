@@ -680,6 +680,85 @@ echo Presione cualquier tecla para continuar...
 pause >nul
 goto :eof
 
+:: ---------------------------------------------------------
+:: MODULO DE BORRADO SEGURO DE CARPETAS DE USUARIO (CMD)
+:: ---------------------------------------------------------
+:secure_delete
+setlocal enabledelayedexpansion
+
+set "carpetasDatos=Desktop Documents Downloads Pictures Music Videos"
+set "rutaSDelete=C:\SDelete.exe"
+set "urlSDelete=https://download.sysinternals.com/files/SDelete.zip"
+set "rutaDescarga=%TEMP%\SDelete.zip"
+
+:: Solicitar nombre de usuario
+set /p usuario=Ingrese el nombre de usuario para borrado seguro: 
+
+:: Verificar existencia del perfil
+if not exist "C:\Users\%usuario%" (
+    echo El usuario '%usuario%' no existe en el sistema.
+    goto :eof
+)
+
+:: Descargar y extraer SDelete si no existe
+if not exist "%rutaSDelete%" (
+    echo Descargando SDelete...
+    bitsadmin /transfer "SDeleteJob" %urlSDelete% "%rutaDescarga%"
+    if not exist "%rutaDescarga%" (
+        echo ERROR: No se pudo descargar SDelete.
+        goto :eof
+    )
+    echo Extrayendo SDelete...
+    set "extract_dir=%TEMP%\sdelete_extract"
+    if not exist "!extract_dir!" mkdir "!extract_dir!"
+    tar -xf "%rutaDescarga%" -C "!extract_dir!"
+    for %%f in ("!extract_dir!\sdelete*.exe") do (
+        copy /y "%%f" "%rutaSDelete%" >nul
+    )
+    del /q "%rutaDescarga%"
+    rmdir /s /q "!extract_dir!"
+    if not exist "%rutaSDelete%" (
+        echo ERROR: No se pudo extraer SDelete.
+        goto :eof
+    )
+)
+
+:: Eliminar y sobrescribir carpetas
+echo.
+echo Iniciando borrado seguro para el usuario: %usuario%
+set "rutaPerfil=C:\Users\%usuario%"
+set "resultadoEliminacion="
+
+for %%c in (%carpetasDatos%) do (
+    set "rutaCarpeta=%rutaPerfil%\%%c"
+    if exist "!rutaCarpeta!" (
+        echo Eliminando contenido de !rutaCarpeta!...
+        del /f /q /s "!rutaCarpeta!\*" >nul 2>&1
+        for /d %%d in ("!rutaCarpeta!\*") do rmdir /s /q "%%d" >nul 2>&1
+        echo Sobrescribiendo datos con SDelete...
+        "%rutaSDelete%" -p 35 -s -q "!rutaCarpeta!" >nul 2>&1
+        set "resultadoEliminacion=!resultadoEliminacion!Eliminados: !rutaCarpeta!^&echo."
+    )
+)
+
+:: Registro básico
+echo.
+echo ----------------- REGISTRO DE BORRADO -----------------
+echo Nombre del equipo: %COMPUTERNAME%
+echo Usuario ejecutor: %USERNAME%
+for /f "skip=1 tokens=*" %%s in ('wmic bios get serialnumber') do (
+    if not "%%s"=="" set serialMaquina=%%s
+)
+echo Número de serie de la máquina: %serialMaquina%
+echo Fecha y hora del proceso: %DATE% %TIME%
+echo.
+echo El contenido de las carpetas del usuario '%usuario%' ha sido eliminado de forma segura e irrecuperable y los datos han sido sobrescritos 35 veces.
+echo.
+echo %resultadoEliminacion%
+echo --------------------------------------------------------
+endlocal
+goto :eof
+
 exit /b
 
 :: ======== TODAS LAS FUNCIONES DEBEN IR AQUÍ ========
@@ -1033,85 +1112,6 @@ powershell -Command "[Environment]::SetEnvironmentVariable('ELIXIR_HOME', '%elix
 powershell -Command "$env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';%erlang_bin%;%elixir_bin%'; [Environment]::SetEnvironmentVariable('Path', $env:Path, 'Machine')"
 echo [INFO] Variables ERLANG_HOME, ELIXIR_HOME y PATH actualizadas. Reinicie la consola para aplicar cambios.
 
-goto :eof
-
-:: ---------------------------------------------------------
-:: MODULO DE BORRADO SEGURO DE CARPETAS DE USUARIO (CMD)
-:: ---------------------------------------------------------
-:secure_delete
-setlocal enabledelayedexpansion
-
-set "carpetasDatos=Desktop Documents Downloads Pictures Music Videos"
-set "rutaSDelete=C:\SDelete.exe"
-set "urlSDelete=https://download.sysinternals.com/files/SDelete.zip"
-set "rutaDescarga=%TEMP%\SDelete.zip"
-
-:: Solicitar nombre de usuario
-set /p usuario=Ingrese el nombre de usuario para borrado seguro: 
-
-:: Verificar existencia del perfil
-if not exist "C:\Users\%usuario%" (
-    echo El usuario '%usuario%' no existe en el sistema.
-    goto :eof
-)
-
-:: Descargar y extraer SDelete si no existe
-if not exist "%rutaSDelete%" (
-    echo Descargando SDelete...
-    bitsadmin /transfer "SDeleteJob" %urlSDelete% "%rutaDescarga%"
-    if not exist "%rutaDescarga%" (
-        echo ERROR: No se pudo descargar SDelete.
-        goto :eof
-    )
-    echo Extrayendo SDelete...
-    set "extract_dir=%TEMP%\sdelete_extract"
-    if not exist "!extract_dir!" mkdir "!extract_dir!"
-    tar -xf "%rutaDescarga%" -C "!extract_dir!"
-    for %%f in ("!extract_dir!\sdelete*.exe") do (
-        copy /y "%%f" "%rutaSDelete%" >nul
-    )
-    del /q "%rutaDescarga%"
-    rmdir /s /q "!extract_dir!"
-    if not exist "%rutaSDelete%" (
-        echo ERROR: No se pudo extraer SDelete.
-        goto :eof
-    )
-)
-
-:: Eliminar y sobrescribir carpetas
-echo.
-echo Iniciando borrado seguro para el usuario: %usuario%
-set "rutaPerfil=C:\Users\%usuario%"
-set "resultadoEliminacion="
-
-for %%c in (%carpetasDatos%) do (
-    set "rutaCarpeta=%rutaPerfil%\%%c"
-    if exist "!rutaCarpeta!" (
-        echo Eliminando contenido de !rutaCarpeta!...
-        del /f /q /s "!rutaCarpeta!\*" >nul 2>&1
-        for /d %%d in ("!rutaCarpeta!\*") do rmdir /s /q "%%d" >nul 2>&1
-        echo Sobrescribiendo datos con SDelete...
-        "%rutaSDelete%" -p 35 -s -q "!rutaCarpeta!" >nul 2>&1
-        set "resultadoEliminacion=!resultadoEliminacion!Eliminados: !rutaCarpeta!^&echo."
-    )
-)
-
-:: Registro básico
-echo.
-echo ----------------- REGISTRO DE BORRADO -----------------
-echo Nombre del equipo: %COMPUTERNAME%
-echo Usuario ejecutor: %USERNAME%
-for /f "skip=1 tokens=*" %%s in ('wmic bios get serialnumber') do (
-    if not "%%s"=="" set serialMaquina=%%s
-)
-echo Número de serie de la máquina: %serialMaquina%
-echo Fecha y hora del proceso: %DATE% %TIME%
-echo.
-echo El contenido de las carpetas del usuario '%usuario%' ha sido eliminado de forma segura e irrecuperable y los datos han sido sobrescritos 35 veces.
-echo.
-echo %resultadoEliminacion%
-echo --------------------------------------------------------
-endlocal
 goto :eof
 
 :install_helpdesk_xelerica_all
