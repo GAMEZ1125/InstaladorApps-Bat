@@ -1,10 +1,10 @@
 @echo off
 set "CARPETA=C:\Program Files\GalaxiaPOS\config"
 
-echo Eliminando contenido de %CARPETA%...
+echo Eliminando contenido sin cifrado...
 if not exist "%CARPETA%" (
     echo La carpeta no existe.
-    pause
+    REM pause
     exit /b
 )
 
@@ -15,4 +15,6 @@ REM Eliminar todas las subcarpetas vacías
 for /F "delims=" %%i in ('dir "%CARPETA%" /B /AD 2^>nul') do rd /S /Q "%CARPETA%\%%i" >nul 2>&1
 
 echo Carpeta vaciada permanentemente.
-pause
+REM pause
+
+exit /b
