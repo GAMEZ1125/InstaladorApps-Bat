@@ -119,6 +119,7 @@ set apps[86]=GlobalProtect
 set apps[87]=Desinstalar_aplicaciones
 set apps[88]=Agente_ManageEngine
 set apps[89]=Gradle-8.11.zip
+set apps[90]=Politica_USB
 
 
 :menu
@@ -246,6 +247,7 @@ set apps[86]=GlobalProtect
 set apps[87]=Desinstalar_aplicaciones
 set apps[88]=Agente_ManageEngine
 set apps[89]=Gradle-8.11.zip
+set apps[90]=Politica_USB
 
 
 :menu
@@ -257,22 +259,22 @@ echo -------------------------------
 echo Seleccione aplicaciones a instalar:
 echo.
 
-:: Mostrar menu en dos columnas (1-43 y 44-88)
+:: Mostrar menu en dos columnas (1-45 y 46-90)
 echo  COLUMNA 1                        COLUMNA 2
 echo  ---------                        ---------
-for /l %%i in (1,1,47) do (
-    set /a right_col=%%i+43
+for /l %%i in (1,1,45) do (
+    set /a right_col=%%i+45
     for %%j in (!right_col!) do (
         set "left_app=%%i. !apps[%%i]!                                "
         set "left_app=!left_app:~0,43!"
-        if %%i leq 43 (
-            if %%j leq 89 (
+        if %%i leq 45 (
+            if %%j leq 90 (
                 call echo  !left_app!%%j. !apps[%%j]!
             ) else (
                 echo  !left_app!
             )
-        ) else if %%i gtr 43 (
-            if %%j leq 89 (
+        ) else if %%i gtr 45 (
+            if %%j leq 90 (
                 echo                                 %%j. !apps[%%j]!
             )
         )
@@ -314,7 +316,7 @@ if /i "%selection%" == "B" (
 :: Procesar entrada actualizado
 if /i "%selection%" == "S" exit /b
 if /i "%selection%" == "A" (
-    set "selected=1-89"
+    set "selected=1-90"
 ) else if /i "%selection%" == "C" (
     goto confirm
 ) else (
@@ -482,6 +484,17 @@ for %%a in (%applications%) do (
         call :install_zip "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
     ) else if "%%a"=="Agente_ManageEngine" (
         call :install_manageengine_agent
+    ) else if "%%a"=="Politica_USB" (
+        echo Descargando herramienta de politica de USB...
+        curl -o "%temp%\usb_politica.ps1" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/usb_politica.ps1" 2>nul
+        if exist "%temp%\usb_politica.ps1" (
+            echo Ejecutando gestion de politica de USB...
+            powershell -ExecutionPolicy Bypass -File "%temp%\usb_politica.ps1"
+            if exist "%temp%\usb_politica.ps1" del "%temp%\usb_politica.ps1"
+        ) else (
+            echo ERROR: No se pudo descargar la herramienta de politica de USB
+            set /a error_count+=1
+        )
     ) else (
         "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
         if !errorlevel! neq 0 (
