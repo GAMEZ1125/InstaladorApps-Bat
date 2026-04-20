@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 setlocal enabledelayedexpansion
 
 :: Colores ANSI via PowerShell
@@ -178,10 +177,10 @@ echo.
 echo  %BRIGHT_CYAN%99.%RESET% Borrado seguro de usuario    %BRIGHT_CYAN%98.%RESET% Temp_SQLDeveloper
 echo  %BRIGHT_CYAN%97.%RESET% Buscar aplicaciones          %BRIGHT_CYAN%S.%RESET%  Salir
 echo.
-echo %BRIGHT_WHITE%Ingrese números separados por comas (ej: 2,5,7-10)%RESET%
+echo %BRIGHT_WHITE%Ingrese numeros separados por comas (ej: 2,5,7-10)%RESET%
 echo %NAV%
 echo.
-set /p "selection=%BRIGHT_GREEN%» Selección: %RESET%"
+set /p "selection=%BRIGHT_GREEN% Seleccion: %RESET%"
 
 if /i "%selection%" == "99" (
     call :secure_delete
@@ -237,9 +236,9 @@ cls
 call :print_logo
 echo %BOLD%%CYAN%Aplicaciones seleccionadas:%RESET%
 echo %GRAY%---------------------------------%RESET%
-for %%a in (%applications%) do echo  %BRIGHT_WHITE%»%RESET% %%a
+for %%a in (%applications%) do echo  %BRIGHT_WHITE% * %RESET% %%a
 echo.
-echo %YELLOW%¿Desea proceder con la instalación?%RESET%
+echo %YELLOW%Desea proceder con la instalacion?%RESET%
 choice /C SN /N /M "%BRIGHT_GREEN%[S]%RESET% Si  %RED%[N]%RESET% No (Volver): "
 if %errorlevel% equ 2 goto menu
 
@@ -424,21 +423,21 @@ echo ===============================================
 echo      DESINSTALADOR DE APLICACIONES
 echo ===============================================
 echo.
-echo Este módulo permite desinstalar aplicaciones instaladas vía:
+echo Este modulo permite desinstalar aplicaciones instaladas via:
 echo [1] Winget (Microsoft Package Manager)
 echo [2] Chocolatey (Community Package Manager)
 echo.
 
 :uninstall_menu
-echo Seleccione una opción:
+echo Seleccione una opcion:
 echo.
 echo [1] Ver aplicaciones instaladas con Winget
 echo [2] Ver aplicaciones instaladas con Chocolatey
-echo [3] Desinstalar aplicación vía Winget
-echo [4] Desinstalar aplicación vía Chocolatey
-echo [5] Volver al menú principal
+echo [3] Desinstalar aplicacion via Winget
+echo [4] Desinstalar aplicacion via Chocolatey
+echo [5] Volver al menu principal
 echo.
-set /p "uninstall_choice=Seleccione una opción (1-5): "
+set /p "uninstall_choice=Seleccione una opcion (1-5): "
 
 if "!uninstall_choice!"=="1" (
     call :list_winget_apps
@@ -456,7 +455,7 @@ if "!uninstall_choice!"=="1" (
     endlocal
     goto :eof
 ) else (
-    echo Opción inválida. Intente nuevamente.
+    echo Opcion invalida. Intente nuevamente.
     timeout /t 2 >nul
     goto uninstall_menu
 )
@@ -482,7 +481,7 @@ echo ===============================================
 echo.
 where choco >nul 2>&1
 if !errorlevel! neq 0 (
-    echo Chocolatey no está instalado en el sistema.
+    echo Chocolatey no esta instalado en el sistema.
     echo Presione cualquier tecla para continuar...
     pause >nul
     goto :eof
@@ -497,23 +496,23 @@ goto :eof
 :uninstall_winget_app
 echo.
 echo ===============================================
-echo    DESINSTALAR APLICACIÓN VÍA WINGET
+echo    DESINSTALAR APLICACION VIA WINGET
 echo ===============================================
 echo.
 echo Aplicaciones disponibles para desinstalar:
 echo.
 "%wingetPath%" list --accept-source-agreements 2>nul | findstr /v "^$"
 echo.
-set /p "winget_app_id=Ingrese el ID exacto de la aplicación a desinstalar (o 'cancelar'): "
+set /p "winget_app_id=Ingrese el ID exacto de la aplicacion a desinstalar (o 'cancelar'): "
 
 if /i "!winget_app_id!"=="cancelar" (
-    echo Operación cancelada.
+    echo Operacion cancelada.
     timeout /t 1 >nul
     goto :eof
 )
 
 if "!winget_app_id!"=="" (
-    echo ID de aplicación no válido.
+    echo ID de aplicacion no valido.
     timeout /t 2 >nul
     goto :eof
 )
@@ -521,19 +520,19 @@ if "!winget_app_id!"=="" (
 echo.
 echo Desinstalando: !winget_app_id!
 echo.
-choice /C SN /N /M "¿Está seguro que desea desinstalar '!winget_app_id!'? [S]i [N]o: "
+choice /C SN /N /M "Esta seguro que desea desinstalar '!winget_app_id!'? [S]i [N]o: "
 if !errorlevel! equ 2 (
-    echo Operación cancelada.
+    echo Operacion cancelada.
     timeout /t 1 >nul
     goto :eof
 )
 
-echo Ejecutando desinstalación...
+echo Ejecutando desinstalacion...
 "%wingetPath%" uninstall --id "!winget_app_id!" --silent --accept-source-agreements
 if !errorlevel! equ 0 (
-    echo [EXITOSO] Aplicación desinstalada correctamente.
+    echo [EXITOSO] Aplicacion desinstalada correctamente.
 ) else (
-    echo [ERROR] No se pudo desinstalar la aplicación.
+    echo [ERROR] No se pudo desinstalar la aplicacion.
 )
 echo.
 echo Presione cualquier tecla para continuar...
@@ -664,7 +663,7 @@ echo Usuario ejecutor: %USERNAME%
 for /f "skip=1 tokens=*" %%s in ('wmic bios get serialnumber') do (
     if not "%%s"=="" set serialMaquina=%%s
 )
-echo Número de serie de la máquina: %serialMaquina%
+echo Numero de serie de la maquina: %serialMaquina%
 echo Fecha y hora del proceso: %DATE% %TIME%
 echo.
 echo El contenido de las carpetas del usuario '%usuario%' ha sido eliminado de forma segura e irrecuperable y los datos han sido sobrescritos 35 veces.
@@ -825,14 +824,14 @@ if not exist "%exe_file%" (
 echo Verificando archivo descargado...
 for %%F in ("%exe_file%") do set file_size=%%~zF
 if %file_size% LSS 1000000 (
-    echo ERROR: Archivo descargado incompleto ^(tamaño: %file_size% bytes^)
+    echo ERROR: Archivo descargado incompleto (tamano: %file_size% bytes)
     set /a error_count+=1
     if exist "%exe_file%" del "%exe_file%"
     goto :eof
 )
 
 echo Ejecutando instalacion silenciosa...
-:: Parámetros específicos para cada aplicación
+:: Parametros especificos para cada aplicacion
 if /i "%~nx1"=="mongodb-compass-1-46-5.exe" (
     echo Usando parametros silenciosos para MongoDB Compass: /S
     start /wait "" "%exe_file%" /S
