@@ -1,29 +1,49 @@
 @echo off
+chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-:: Función para encontrar winget automáticamente
-call :find_winget
-if not defined wingetPath (
-    echo ERROR: No se pudo encontrar winget en el sistema.
-    echo Verifique que Microsoft Store App Installer esté instalado.
-    pause
-    exit /b
-)
+:: ===========================================================
+:: CONFIGURACION DE COLORES ANSI
+:: ===========================================================
+for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do set "ESC=%%b"
+if not defined ESC set "ESC= "
 
-echo Usando winget desde: %wingetPath%
+set "RESET=%ESC%[0m"
+set "BOLD=%ESC%[1m"
+set "CYAN=%ESC%[36m"
+set "GREEN=%ESC%[32m"
+set "YELLOW=%ESC%[33m"
+set "RED=%ESC%[31m"
+set "MAGENTA=%ESC%[35m"
+set "BLUE=%ESC%[34m"
+set "WHITE=%ESC%[37m"
+set "GRAY=%ESC%[90m"
+set "BRIGHT_CYAN=%ESC%[96m"
+set "BRIGHT_GREEN=%ESC%[92m"
+set "BRIGHT_WHITE=%ESC%[97m"
+set "BG_CYAN=%ESC%[46m"
+set "BG_WHITE=%ESC%[47m"
+set "BLACK=%ESC%[30m"
 
-:: Administrar modo de ejecución
+:: ===========================================================
+:: INICIALIZACION Y SEGURIDAD
+:: ===========================================================
+title Gamez Code Solutions - Instalador Maestro
+mode con: cols=120 lines=55
+
+:: Administrar modo de ejecución (Admin)
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Elevando permisos de administrador...
+    echo %YELLOW%[!] Elevando permisos de administrador...%RESET%
     powershell Start-Process -Verb RunAs -FilePath "%comspec%" -ArgumentList '/c ""%~f0""'
     exit /b
 )
 
-:: Verificar winget en ruta específica
-if not exist "%wingetPath%" (
-    echo ERROR: winget no encontrado en la ruta especificada.
-    echo Verifique que tenga instalada la versión 1.25.340 de App Installer
+:: Encontrar winget automáticamente
+call :find_winget
+if not defined wingetPath (
+    echo %RED%[ERROR] No se pudo encontrar winget en el sistema.%RESET%
+    echo Verifique que Microsoft Store App Installer esté instalado.
     pause
     exit /b
 )
@@ -121,173 +141,54 @@ set apps[88]=Agente_ManageEngine
 set apps[89]=Gradle-8.11.zip
 set apps[90]=Politica_USB
 
+:: Opciones de navegación rápidas
+set "NAV=%BRIGHT_CYAN%[A]%RESET% Todo  %BRIGHT_CYAN%[C]%RESET% Confirmar  %BRIGHT_CYAN%[S]%RESET% Salir  %BRIGHT_CYAN%[B]%RESET% Buscar"
 
 :menu
 cls
-echo -------------------------------
-echo  INSTALADOR DE APLICACIONES V.2.0
-echo  Winget instalador de @echo off
-setlocal enabledelayedexpansion
-
-:: Función para encontrar winget automáticamente
-call :find_winget
-if not defined wingetPath (
-    echo ERROR: No se pudo encontrar winget en el sistema.
-    echo Verifique que Microsoft Store App Installer esté instalado.
-    pause
-    exit /b
-)
-
-echo Usando winget desde: %wingetPath%
-
-:: Administrar modo de ejecución
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Elevando permisos de administrador...
-    powershell Start-Process -Verb RunAs -FilePath "%comspec%" -ArgumentList '/c ""%~f0""'
-    exit /b
-)
-
-:: Verificar winget en ruta específica
-if not exist "%wingetPath%" (
-    echo ERROR: winget no encontrado en la ruta especificada.
-    echo Verifique que tenga instalada la versión 1.25.340 de App Installer
-    pause
-    exit /b
-)
-
-:: Lista de aplicaciones actualizada
-set apps[1]=JSFoundation.Appium
-set apps[2]=Google.Chrome
-set apps[3]=DBeaver.DBeaver.Community
-set apps[4]=Mozilla.Firefox
-set apps[5]=Git.Git
-set apps[6]=OpenJS.NodeJS
-set apps[7]=Microsoft.VisualStudioCode
-set apps[8]=Postman.Postman
-set apps[9]=SmartBear.SoapUI
-set apps[10]=Vysor.Vysor
-set apps[11]=WinSCP.WinSCP
-set apps[12]=Notepad++.Notepad++
-rem NOTA: Si ya esta instalado, winget puede reportar "no upgrade available"
-set apps[13]=Oracle.JDK.21
-set apps[14]=JetBrains.IntelliJIDEA.Community
-set apps[15]=Microsoft.SqlServerManagementStudio
-set apps[16]=Amazon.Corretto.11.JDK
-set apps[17]=Amazon.Corretto.8.JDK
-set apps[18]=Amazon.Corretto.17.JDK
-set apps[19]=Python.Python.3.12
-set apps[20]=Amazon.AWSCLI
-set apps[21]=Google.AndroidStudio
-set apps[22]=ShareX.ShareX
-set apps[23]=Microsoft.VisualStudio.2022.BuildTools
-set apps[24]=MongoDB.Compass.Full
-set apps[25]=Microsoft.SQLServer.2022.Express
-set apps[26]=VideoLAN.VLC
-set apps[27]=Microsoft.Office
-set apps[28]=Microsoft.DotNet.Framework.DeveloperPack_4
-set apps[29]=Eraser.Eraser
-set apps[30]=Fortinet.FortiClientVPN
-set apps[31]=IBMiAccess_v1r1.zip
-set apps[32]=apache-maven-3.9.11-bin.zip
-set apps[33]=Gradle-8.13.zip
-set apps[34]=FusionInventory-Agent.exe
-set apps[35]=Amazon.WorkspacesClient
-set apps[36]=Adobe.Acrobat.Reader.64-bit
-set apps[37]=Microsoft.VisualStudio.2022.Community
-set apps[38]=DEVCOM.JMeter
-set apps[39]=jenkins.msi
-set apps[40]=MongoDB.Server
-set apps[41]=MongoDB.Shell
-set apps[42]=MongoDB.DatabaseTools
-set apps[43]=NoSQLBooster.NoSQLBooster
-set apps[44]=Gradle-8.5.zip
-set apps[45]=Elixir
-set apps[46]=Gradle-8.10.zip
-set apps[47]=Kubernetes.kubectl
-set apps[48]=tesseract-ocr.tesseract
-set apps[49]=Chocolatey.Chocolatey
-set apps[50]=FVM
-set apps[51]=UltraVNC_1436
-set apps[52]=Microsoft.Sysinternals.SDelete
-set apps[53]=Microsoft.DesktopAppInstaller
-set apps[54]=Instalar_Winget
-set apps[55]=SaenzFety_Atera-SanDiego
-set apps[56]=SaenzFety_Atera-Access
-set apps[57]=SaenzFety_Atera-Comerciales_Externos
-set apps[58]=SaenzFety_Atera-CID
-set apps[59]=PL/SQL_Developer
-set apps[60]=Cisco_Secure_Client_v5.1.2.42
-set apps[61]=Gradle-8.14.3.zip
-set apps[62]=MongoDB-Compass
-set apps[63]=npm_appium
-set apps[64]=Gestion_Hosts
-set apps[65]=apache-jmeter-5.6.3.zip
-set apps[66]=mysql-connector-odbc-9.4.0-winx64.msi
-set apps[67]=mysql-connector-net-9.4.0.msi
-set apps[68]=Docker.DockerDesktop
-set apps[69]=Gestion_Certificados
-set apps[70]=Gestion_Adaptadores_de_Red
-set apps[71]=OfimaBot
-set apps[72]=UIPath
-set apps[73]=Office365_32bits
-set apps[74]=Gradle_v9.0.0
-set apps[75]=HelpDesk_Xelerica
-set apps[76]=Helpdesk_Xelerica_OneDrive
-set apps[77]=Filezilla
-set apps[78]=3TSoftwareLabs.Robo3T
-set apps[79]=DBVis.DbVisualizer
-set apps[80]=PuTTY.PuTTY
-set apps[81]=uvncbvba.UltraVNC
-set apps[82]=UltraVNC_Choco
-set apps[83]=Add/Delete_UserGroup
-set apps[84]=Reserved_Slot_84
-set apps[85]=InstallWith_Winget_Or_Choco
-set apps[86]=GlobalProtect
-set apps[87]=Desinstalar_aplicaciones
-set apps[88]=Agente_ManageEngine
-set apps[89]=Gradle-8.11.zip
-set apps[90]=Politica_USB
-
-
-:menu
-cls
-echo -------------------------------
-echo  INSTALADOR DE APLICACIONES V.2.0
-echo  Winget instalador de aplicaciones
-echo -------------------------------
-echo Seleccione aplicaciones a instalar:
+call :print_logo
+echo  %CYAN%Seleccione aplicaciones a instalar:%RESET%
 echo.
 
-:: Mostrar menu en dos columnas (1-45 y 46-90)
-echo  COLUMNA 1                        COLUMNA 2
-echo  ---------                        ---------
-for /l %%i in (1,1,45) do (
-    set /a right_col=%%i+45
-    for %%j in (!right_col!) do (
-        set "left_app=%%i. !apps[%%i]!                                "
-        set "left_app=!left_app:~0,43!"
-        if %%i leq 45 (
-            if %%j leq 90 (
-                call echo  !left_app!%%j. !apps[%%j]!
-            ) else (
-                echo  !left_app!
-            )
-        ) else if %%i gtr 45 (
-            if %%j leq 90 (
-                echo                                 %%j. !apps[%%j]!
-            )
-        )
+:: Mostrar menu en tres columnas (1-30, 31-60, 61-90)
+echo  %BOLD%COLUMNA 1                        COLUMNA 2                        COLUMNA 3%RESET%
+echo  %GRAY%--------------------------    --------------------------    --------------------------%RESET%
+for /l %%i in (1,1,30) do (
+    set /a "col2=%%i+30"
+    set /a "col3=%%i+60"
+    
+    set "app1=!apps[%%i]!                          "
+    set "app1=!app1:~0,26!"
+    
+    set "id1=%%i"
+    if %%i lss 10 set "id1=0%%i"
+    
+    set "line= %BRIGHT_CYAN%!id1!.%RESET% !app1!"
+    
+    :: Columna 2
+    for %%k in (!col2!) do (
+        set "app2=!apps[%%k]!                          "
+        set "app2=!app2:~0,26!"
+        set "line=!line! %BRIGHT_CYAN%%%k.%RESET% !app2!"
     )
+    
+    :: Columna 3
+    for %%m in (!col3!) do (
+        set "app3=!apps[%%m]!                          "
+        set "app3=!app3:~0,26!"
+        set "line=!line! %BRIGHT_CYAN%%%m.%RESET% !app3!"
+    )
+    
+    echo !line!
 )
-echo  99. Borrado seguro de usuario
-echo  98. Temp_SQLDeveloper
-echo  97. Buscar aplicaciones
 echo.
-echo Ingrese numeros separados por comas (ej: 2,5,7-10)
-echo [A] Todos   [C] Confirmar   [S] Salir   [B] Buscar
+echo  %BRIGHT_CYAN%99.%RESET% Borrado seguro de usuario    %BRIGHT_CYAN%98.%RESET% Temp_SQLDeveloper
+echo  %BRIGHT_CYAN%97.%RESET% Buscar aplicaciones          %BRIGHT_CYAN%S.%RESET%  Salir
 echo.
-set /p "selection=Seleccion: "
+echo %BRIGHT_WHITE%Ingrese números separados por comas (ej: 2,5,7-10)%RESET%
+echo %NAV%
+echo.
+set /p "selection=%BRIGHT_GREEN%» Selección: %RESET%"
 
 if /i "%selection%" == "99" (
     call :secure_delete
@@ -340,23 +241,25 @@ for %%a in ("%selected:,=" "%") do (
 
 :confirm
 cls
-echo Aplicaciones seleccionadas:
-echo --------------------------
-for %%a in (%applications%) do echo  - %%a
+call :print_logo
+echo %BOLD%%CYAN%Aplicaciones seleccionadas:%RESET%
+echo %GRAY%---------------------------------%RESET%
+for %%a in (%applications%) do echo  %BRIGHT_WHITE%»%RESET% %%a
 echo.
-echo ¿Instalar estas aplicaciones?
-choice /C SN /N /M "[S]i  [N]o (Volver al menu): "
+echo %YELLOW%¿Desea proceder con la instalación?%RESET%
+choice /C SN /N /M "%BRIGHT_GREEN%[S]%RESET% Si  %RED%[N]%RESET% No (Volver): "
 if %errorlevel% equ 2 goto menu
 
 :: Proceso de instalacion
 set error_count=0
 set application_count=0
 
-echo Iniciando instalaciones...
+echo %BOLD%%CYAN%Iniciando instalaciones...%RESET%
 for %%a in (%applications%) do (
     set /a application_count+=1
     echo.
-    echo [%time%] Instalando %%a...
+    echo %BRIGHT_WHITE%[%time%]%RESET% Instalando: %BRIGHT_CYAN%%%a%RESET%
+    call :spinner_wait "Preparando entorno para %%a..."
     
     if "%%a"=="IBMiAccess_v1r1.zip" (
         call :install_zip "https://www.nicklitten.com/wp-content/uploads/IBMiAccess_v1r1.zip" "C:\IBMiAccess_v1r1"
@@ -485,14 +388,14 @@ for %%a in (%applications%) do (
     ) else if "%%a"=="Agente_ManageEngine" (
         call :install_manageengine_agent
     ) else if "%%a"=="Politica_USB" (
-        echo Descargando herramienta de politica de USB...
+        echo Descargando herramienta de política de USB...
         curl -o "%temp%\usb_politica.ps1" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/usb_politica.ps1" 2>nul
         if exist "%temp%\usb_politica.ps1" (
-            echo Ejecutando gestion de politica de USB...
+            echo Ejecutando gestión de política de USB...
             powershell -ExecutionPolicy Bypass -File "%temp%\usb_politica.ps1"
             if exist "%temp%\usb_politica.ps1" del "%temp%\usb_politica.ps1"
         ) else (
-            echo ERROR: No se pudo descargar la herramienta de politica de USB
+            echo ERROR: No se pudo descargar la herramienta de política de USB
             set /a error_count+=1
         )
     ) else (
@@ -508,12 +411,18 @@ for %%a in (%applications%) do (
 
 :: Resultado final
 echo.
-echo Resumen de instalacion:
-echo Aplicaciones instaladas: %application_count%
-echo Errores: %error_count%
-if %error_count% gtr 0 echo Verifique los errores e intente instalar manualmente.
-pause
-goto :eof
+echo %BOLD%%CYAN%================================================%RESET%
+echo %BOLD%%CYAN%              RESUMEN DE PROCESO                %RESET%
+echo %BOLD%%CYAN%================================================%RESET%
+echo  %BRIGHT_WHITE%Finalizado en:%RESET% %time%
+echo  %BRIGHT_GREEN%Exitosas:%RESET%   %application_count%
+echo  %RED%Errores:%RESET%     %error_count%
+echo %BOLD%%CYAN%================================================%RESET%
+if %error_count% gtr 0 echo %YELLOW%[!] Verifique los errores e intente instalar manualmente.%RESET%
+echo.
+echo %GRAY%Presione una tecla para volver al menu...%RESET%
+pause >nul
+goto menu
 
 :uninstall_applications
 setlocal enabledelayedexpansion
@@ -522,21 +431,21 @@ echo ===============================================
 echo      DESINSTALADOR DE APLICACIONES
 echo ===============================================
 echo.
-echo Este modulo permite desinstalar aplicaciones instaladas via:
+echo Este módulo permite desinstalar aplicaciones instaladas vía:
 echo [1] Winget (Microsoft Package Manager)
 echo [2] Chocolatey (Community Package Manager)
 echo.
 
 :uninstall_menu
-echo Seleccione una opcion:
+echo Seleccione una opción:
 echo.
 echo [1] Ver aplicaciones instaladas con Winget
 echo [2] Ver aplicaciones instaladas con Chocolatey
-echo [3] Desinstalar aplicacion via Winget
-echo [4] Desinstalar aplicacion via Chocolatey
-echo [5] Volver al menu principal
+echo [3] Desinstalar aplicación vía Winget
+echo [4] Desinstalar aplicación vía Chocolatey
+echo [5] Volver al menú principal
 echo.
-set /p "uninstall_choice=Seleccione una opcion (1-5): "
+set /p "uninstall_choice=Seleccione una opción (1-5): "
 
 if "!uninstall_choice!"=="1" (
     call :list_winget_apps
@@ -554,7 +463,7 @@ if "!uninstall_choice!"=="1" (
     endlocal
     goto :eof
 ) else (
-    echo Opcion invalida. Intente nuevamente.
+    echo Opción inválida. Intente nuevamente.
     timeout /t 2 >nul
     goto uninstall_menu
 )
@@ -580,7 +489,7 @@ echo ===============================================
 echo.
 where choco >nul 2>&1
 if !errorlevel! neq 0 (
-    echo Chocolatey no esta instalado en el sistema.
+    echo Chocolatey no está instalado en el sistema.
     echo Presione cualquier tecla para continuar...
     pause >nul
     goto :eof
@@ -595,23 +504,23 @@ goto :eof
 :uninstall_winget_app
 echo.
 echo ===============================================
-echo    DESINSTALAR APLICACION VIA WINGET
+echo    DESINSTALAR APLICACIÓN VÍA WINGET
 echo ===============================================
 echo.
 echo Aplicaciones disponibles para desinstalar:
 echo.
 "%wingetPath%" list --accept-source-agreements 2>nul | findstr /v "^$"
 echo.
-set /p "winget_app_id=Ingrese el ID exacto de la aplicacion a desinstalar (o 'cancelar'): "
+set /p "winget_app_id=Ingrese el ID exacto de la aplicación a desinstalar (o 'cancelar'): "
 
 if /i "!winget_app_id!"=="cancelar" (
-    echo Operacion cancelada.
+    echo Operación cancelada.
     timeout /t 1 >nul
     goto :eof
 )
 
 if "!winget_app_id!"=="" (
-    echo ID de aplicacion no valido.
+    echo ID de aplicación no válido.
     timeout /t 2 >nul
     goto :eof
 )
@@ -619,19 +528,19 @@ if "!winget_app_id!"=="" (
 echo.
 echo Desinstalando: !winget_app_id!
 echo.
-choice /C SN /N /M "Esta seguro que desea desinstalar '!winget_app_id!'? [S]i [N]o: "
+choice /C SN /N /M "¿Está seguro que desea desinstalar '!winget_app_id!'? [S]i [N]o: "
 if !errorlevel! equ 2 (
-    echo Operacion cancelada.
+    echo Operación cancelada.
     timeout /t 1 >nul
     goto :eof
 )
 
-echo Ejecutando desinstalacion...
+echo Ejecutando desinstalación...
 "%wingetPath%" uninstall --id "!winget_app_id!" --silent --accept-source-agreements
 if !errorlevel! equ 0 (
-    echo [EXITOSO] Aplicacion desinstalada correctamente.
+    echo [EXITOSO] Aplicación desinstalada correctamente.
 ) else (
-    echo [ERROR] No se pudo desinstalar la aplicacion.
+    echo [ERROR] No se pudo desinstalar la aplicación.
 )
 echo.
 echo Presione cualquier tecla para continuar...
@@ -3012,6 +2921,24 @@ if exist "!agent_file!" del "!agent_file!"
 if exist "!mst_file!" del "!mst_file!"
 pause
 goto end_manageengine
+
+
+:print_logo
+set "P=^|"
+echo %BRIGHT_CYAN%      _ _       %BRIGHT_WHITE%  ___   _   __  __ ___ ___ %RESET%
+echo %BRIGHT_CYAN%    / . \      %BRIGHT_WHITE% / __%P% /_\ %P%  \/  %P% __%P%_  /%RESET%
+echo %BRIGHT_CYAN%   / / \ \    %BRIGHT_WHITE%^| (_ %P%/ _ \ %P% %P%\/%P% %P% _%P% / / %RESET%
+echo %BRIGHT_CYAN%  / /%BLACK%%BG_WHITE%CODE%RESET%%BRIGHT_CYAN%\ \    \___/_/ \_\_%P%  %P%_%P%___/___%P% %RESET%
+echo %BRIGHT_CYAN%  \ \   / /   %RESET%
+echo %BRIGHT_CYAN%   \ \_/ /    %WHITE%       S O L U T I O N S%RESET%
+echo %BRIGHT_CYAN%    \ _ /%RESET%
+echo.
+exit /b
+
+:spinner_wait
+set "msg=%~1"
+powershell -Command "$s = '|','/','-','\'; 0..12 | %%{ Write-Host -NoNewline \"`r %CYAN%$($s[$_ %% 4])%RESET% $msg\"; Start-Sleep -Milliseconds 150 }; Write-Host \"`r\""
+exit /b
 
 :end_manageengine
 endlocal
