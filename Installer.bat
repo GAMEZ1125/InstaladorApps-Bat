@@ -2,11 +2,8 @@
 chcp 65001 >nul
 setlocal enabledelayedexpansion
 
-:: ===========================================================
-:: CONFIGURACION DE COLORES ANSI
-:: ===========================================================
-for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do set "ESC=%%b"
-if not defined ESC set "ESC= "
+:: Colores ANSI via PowerShell
+for /f "tokens=*" %%a in ('powershell -Command "[char]27"') do set "ESC=%%a"
 
 set "RESET=%ESC%[0m"
 set "BOLD=%ESC%[1m"
@@ -21,20 +18,16 @@ set "GRAY=%ESC%[90m"
 set "BRIGHT_CYAN=%ESC%[96m"
 set "BRIGHT_GREEN=%ESC%[92m"
 set "BRIGHT_WHITE=%ESC%[97m"
-set "BG_CYAN=%ESC%[46m"
 set "BG_WHITE=%ESC%[47m"
 set "BLACK=%ESC%[30m"
 
-:: ===========================================================
-:: INICIALIZACION Y SEGURIDAD
-:: ===========================================================
+:: Inicializacion
 title Gamez Code Solutions - Instalador Maestro
 mode con: cols=120 lines=55
 
-:: Administrar modo de ejecución (Admin)
 net session >nul 2>&1
 if %errorlevel% neq 0 (
-    echo %YELLOW%[!] Elevando permisos de administrador...%RESET%
+    echo %YELLOW%[!] Ejecutando como administrador...%RESET%
     powershell Start-Process -Verb RunAs -FilePath "%comspec%" -ArgumentList '/c ""%~f0""'
     exit /b
 )
@@ -2921,7 +2914,6 @@ if exist "!agent_file!" del "!agent_file!"
 if exist "!mst_file!" del "!mst_file!"
 pause
 goto end_manageengine
-
 
 :print_logo
 set "P=^|"
