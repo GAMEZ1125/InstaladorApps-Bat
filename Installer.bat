@@ -270,11 +270,11 @@ for %%a in (%applications%) do (
     ) else if "%%a"=="jenkins.msi" (
         call :install_msi "https://get.jenkins.io/windows/2.509/jenkins.msi"
     ) else if "%%a"=="Kubernetes.kubectl" (
-        "%wingetPath%" install --id Kubernetes.kubectl --accept-source-agreements --accept-package-agreements -h
+        call :winget_install "Kubernetes.kubectl" -h
     ) else if "%%a"=="tesseract-ocr.tesseract" (
-        "%wingetPath%" install --id tesseract-ocr.tesseract --accept-source-agreements --accept-package-agreements -h
+        call :winget_install "tesseract-ocr.tesseract" -h
     ) else if "%%a"=="Chocolatey.Chocolatey" (
-        "%wingetPath%" install --id Chocolatey.Chocolatey --accept-source-agreements --accept-package-agreements -h
+        call :winget_install "Chocolatey.Chocolatey" -h
     ) else if "%%a"=="FVM" (
         powershell -Command "choco install fvm -y"
     ) else if "%%a"=="UltraVNC_Choco" (
@@ -295,7 +295,7 @@ for %%a in (%applications%) do (
     ) else if "%%a"=="UltraVNC_1436" (
         call :install_exe "https://descargas-xelerica.netlify.app/assets/downloads/UltraVNC_1436_X64_Setup.exe"
     ) else if "%%a"=="Microsoft.Sysinternals.SDelete" (
-        "%wingetPath%" install --id Microsoft.Sysinternals.SDelete --accept-source-agreements --accept-package-agreements -h
+        call :winget_install "Microsoft.Sysinternals.SDelete" -h
     ) else if "%%a"=="Microsoft.DesktopAppInstaller" (
         call :install_winget_update
     ) else if "%%a"=="Instalar_Winget" (
@@ -391,7 +391,7 @@ for %%a in (%applications%) do (
             set /a error_count+=1
         )
     ) else (
-        "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
+        call :winget_install "%%a" --silent
         if !errorlevel! neq 0 (
             echo ERROR al instalar %%a
             set /a error_count+=1
@@ -1477,7 +1477,7 @@ echo.
 echo --------------------------------------------------
 echo Instalando !package_id! con WinGet...
 echo --------------------------------------------------
-"%wingetPath%" install --id "!package_id!" --silent --accept-package-agreements --accept-source-agreements
+call :winget_install "!package_id!" --silent
 if !errorlevel! equ 0 (
     echo.
     echo [EXITO] Paquete instalado correctamente con WinGet.
@@ -1619,6 +1619,30 @@ for /d %%d in ("C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*") d
 
 :winget_found
 goto :eof
+
+:winget_install
+setlocal enabledelayedexpansion
+set "package_id=%~1"
+shift
+set "install_args=%*"
+set "winget_log=%temp%\winget_install_%random%%random%.log"
+
+call "%wingetPath%" install --id "!package_id!" !install_args! --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
+set "install_exit=!errorlevel!"
+type "!winget_log!"
+
+if !install_exit! neq 0 (
+    findstr /C:"Please specify one of them using the --source option to proceed." /C:"Failed when searching source: msstore" "!winget_log!" >nul
+    if !errorlevel! equ 0 (
+        echo [INFO] Reintentando instalacion con --source winget...
+        call "%wingetPath%" install --id "!package_id!" !install_args! --source winget --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
+        set "install_exit=!errorlevel!"
+        type "!winget_log!"
+    )
+)
+
+if exist "!winget_log!" del "!winget_log!"
+endlocal & exit /b %install_exit%
 
 :install_winget_update
 echo Actualizando Microsoft App Installer (Winget)...
@@ -2302,7 +2326,7 @@ for %%a in (!applications!) do (
     ) else if "%%a"=="Gradle-8.11.zip" (
         call :install_zip "https://services.gradle.org/distributions/gradle-8.11-all.zip" "C:\Program Files"
     ) else (
-        "%wingetPath%" install --id %%a --silent --accept-package-agreements --accept-source-agreements
+        call :winget_install "%%a" --silent
         if !errorlevel! neq 0 (
             echo ERROR al instalar %%a
             set /a error_count+=1
