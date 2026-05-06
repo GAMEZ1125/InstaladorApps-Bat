@@ -239,7 +239,7 @@ echo %GRAY%---------------------------------%RESET%
 for %%a in (%applications%) do echo  %BRIGHT_WHITE% * %RESET% %%a
 echo.
 echo %YELLOW%Desea proceder con la instalacion?%RESET%
-choice /C SN /N /M "%BRIGHT_GREEN%[S]%RESET% Si  %RED%[N]%RESET% No (Volver): "
+choice /C SN /N /M "[S] Si  [N] No (Volver): "
 if %errorlevel% equ 2 goto menu
 
 :: Proceso de instalacion
@@ -520,7 +520,7 @@ if "!winget_app_id!"=="" (
 echo.
 echo Desinstalando: !winget_app_id!
 echo.
-choice /C SN /N /M "Esta seguro que desea desinstalar '!winget_app_id!'? [S]i [N]o: "
+choice /C SN /N /M "Esta seguro que desea desinstalar '!winget_app_id!'? [S] Si  [N] No: "
 if !errorlevel! equ 2 (
     echo Operacion cancelada.
     timeout /t 1 >nul
@@ -575,7 +575,7 @@ if "!choco_app_name!"=="" (
 echo.
 echo Desinstalando: !choco_app_name!
 echo.
-choice /C SN /N /M "Esta seguro que desea desinstalar '!choco_app_name!'? [S]i [N]o: "
+choice /C SN /N /M "Esta seguro que desea desinstalar '!choco_app_name!'? [S] Si  [N] No: "
 if !errorlevel! equ 2 (
     echo Operacion cancelada.
     timeout /t 1 >nul
@@ -1928,7 +1928,7 @@ echo.
 echo Para evitar problemas con la instalacion de Appium,
 echo se recomienda configurar la ExecutionPolicy a RemoteSigned.
 echo.
-choice /C SN /N /M "Desea ejecutar Set-ExecutionPolicy RemoteSigned? [S]i [N]o: "
+choice /C SN /N /M "Desea ejecutar Set-ExecutionPolicy RemoteSigned? [S] Si  [N] No: "
 if !errorlevel! equ 1 (
     echo.
     echo Configurando ExecutionPolicy a RemoteSigned...
@@ -2164,7 +2164,7 @@ for %%i in (!selected_apps!) do (
 
 echo.
 echo ¿Instalar estas aplicaciones?
-choice /C SN /N /M "[S]i  [N]o: "
+choice /C SN /N /M "[S] Si  [N] No: "
 if !errorlevel! equ 2 (
     endlocal
     goto :eof
@@ -2242,7 +2242,7 @@ for %%a in (!applications!) do echo  - %%a
 
 echo.
 echo ¿Instalar estas aplicaciones?
-choice /C SN /N /M "[S]i  [N]o: "
+choice /C SN /N /M "[S] Si  [N] No: "
 if !errorlevel! equ 2 (
     endlocal
     goto :eof
