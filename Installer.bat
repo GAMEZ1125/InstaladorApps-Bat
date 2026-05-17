@@ -1691,23 +1691,50 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo     $installBtn.Enabled = $resultList.SelectedItems.Count -gt 0
 >>"!_psfile!" echo })
 >>"!_psfile!" echo $installBtn.Add_Click^({
->>"!_psfile!" echo     if ^($resultList.SelectedItem^) {
->>"!_psfile!" echo         $pkgId = $resultList.SelectedItem -split '\s+' ^| Select-Object -First 1
->>"!_psfile!" echo         $confirm = [System.Windows.Forms.MessageBox]::Show^("Instalar '$pkgId'?","Confirmar","YesNo","Question"^)
->>"!_psfile!" echo         if ^($confirm -eq "Yes"^) {
->>"!_psfile!" echo             $statusLabel.Text = "Instalando " + $pkgId + "..."
->>"!_psfile!" echo             try {
->>"!_psfile!" echo                 if ^($srcCombo.SelectedItem -eq "WinGet"^) {
->>"!_psfile!" echo                     winget install --id $pkgId --silent --accept-package-agreements --accept-source-agreements
->>"!_psfile!" echo                 } else {
->>"!_psfile!" echo                     choco install $pkgId -y
+>>"!_psfile!" echo     if ^(-not $resultList.SelectedItem^) { return }
+>>"!_psfile!" echo     $line = $resultList.SelectedItem.Trim^(^)
+>>"!_psfile!" echo     if ^($line -match "^(Nombre|---|Chocolatey v|Name|Failed|Error|The |No se)"^) {
+>>"!_psfile!" echo         [System.Windows.Forms.MessageBox]::Show^("Seleccione una aplicacion de la lista, no el encabezado o mensaje","Aviso","OK","Warning"^)
+>>"!_psfile!" echo         return
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $fields = $line -split '\s+', 4
+>>"!_psfile!" echo     if ^($srcCombo.SelectedItem -eq "WinGet"^) {
+>>"!_psfile!" echo         $pkgName = $fields[0]
+>>"!_psfile!" echo         $pkgId = if ^($fields.Count -ge 2^) { $fields[1] } else { $fields[0] }
+>>"!_psfile!" echo     } else {
+>>"!_psfile!" echo         $pkgName = $fields[0] -replace '\[.*\]',''
+>>"!_psfile!" echo         $pkgId = $pkgName
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $pkgName = $pkgName.Trim^(^)
+>>"!_psfile!" echo     if ^((-not $pkgName^) -or ^($pkgName.Length -gt 80^)^) {
+>>"!_psfile!" echo         [System.Windows.Forms.MessageBox]::Show^("Linea no valida: seleccione un resultado de busqueda","Error","OK","Error"^)
+>>"!_psfile!" echo         return
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $confirm = [System.Windows.Forms.MessageBox]::Show^("Instalar '$pkgName' ($pkgId^)?","Confirmar","YesNo","Question"^)
+>>"!_psfile!" echo     if ^($confirm -eq "Yes"^) {
+>>"!_psfile!" echo         $statusLabel.Text = "Instalando " + $pkgName + "..."
+>>"!_psfile!" echo         try {
+>>"!_psfile!" echo             if ^($srcCombo.SelectedItem -eq "WinGet"^) {
+>>"!_psfile!" echo                 $output = winget install --name "$pkgName" --silent --accept-package-agreements --accept-source-agreements 2^>^&1 ^| Out-String
+>>"!_psfile!" echo                 if ^($LASTEXITCODE -ne 0 -and $pkgId -ne $pkgName^) {
+>>"!_psfile!" echo                     $output2 = winget install --id "$pkgId" --silent --accept-package-agreements --accept-source-agreements 2^>^&1 ^| Out-String
+>>"!_psfile!" echo                     if ^($LASTEXITCODE -eq 0^) { $output = $output2 }
 >>"!_psfile!" echo                 }
->>"!_psfile!" echo                 [System.Windows.Forms.MessageBox]::Show^("Instalacion completada","Info","OK","Information"^)
->>"!_psfile!" echo                 $statusLabel.Text = "Instalacion completada: " + $pkgId
->>"!_psfile!" echo             } catch {
->>"!_psfile!" echo                 [System.Windows.Forms.MessageBox]::Show^("Error: $_","Error","OK","Error"^)
->>"!_psfile!" echo                 $statusLabel.Text = "Error al instalar " + $pkgId
+>>"!_psfile!" echo             } else {
+>>"!_psfile!" echo                 $output = choco install $pkgName -y 2^>^&1 ^| Out-String
 >>"!_psfile!" echo             }
+>>"!_psfile!" echo             if ^($LASTEXITCODE -eq 0^) {
+>>"!_psfile!" echo                 [System.Windows.Forms.MessageBox]::Show^("Instalacion completada exitosamente","Exito","OK","Information"^)
+>>"!_psfile!" echo                 $statusLabel.Text = "Instalacion completada: " + $pkgName
+>>"!_psfile!" echo             } else {
+>>"!_psfile!" echo                 $shortOut = $output.Trim^(^)
+>>"!_psfile!" echo                 if ^($shortOut.Length -gt 500^) { $shortOut = $shortOut.Substring^(0,500^) }
+>>"!_psfile!" echo                 [System.Windows.Forms.MessageBox]::Show^("Fallo al instalar '$pkgName' (codigo: $LASTEXITCODE^):`n$shortOut","Error","OK","Error"^)
+>>"!_psfile!" echo                 $statusLabel.Text = "Error al instalar " + $pkgName
+>>"!_psfile!" echo             }
+>>"!_psfile!" echo         } catch {
+>>"!_psfile!" echo             [System.Windows.Forms.MessageBox]::Show^("Error: $_","Error","OK","Error"^)
+>>"!_psfile!" echo             $statusLabel.Text = "Error al instalar " + $pkgName
 >>"!_psfile!" echo         }
 >>"!_psfile!" echo     }
 >>"!_psfile!" echo })
