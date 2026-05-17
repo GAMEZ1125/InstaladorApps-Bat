@@ -1697,7 +1697,7 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo         [System.Windows.Forms.MessageBox]::Show^("Seleccione una aplicacion de la lista, no el encabezado o mensaje","Aviso","OK","Warning"^)
 >>"!_psfile!" echo         return
 >>"!_psfile!" echo     }
->>"!_psfile!" echo     $fields = $line -split '\s+', 4
+>>"!_psfile!" echo     $fields = $line -split '\s{2,}', 5
 >>"!_psfile!" echo     if ^($srcCombo.SelectedItem -eq "WinGet"^) {
 >>"!_psfile!" echo         $pkgName = $fields[0]
 >>"!_psfile!" echo         $pkgId = if ^($fields.Count -ge 2^) { $fields[1] } else { $fields[0] }
