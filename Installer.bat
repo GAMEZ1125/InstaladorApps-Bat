@@ -31,11 +31,11 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-:: Encontrar winget automáticamente
+:: Encontrar winget autom�ticamente
 call :find_winget
 if not defined wingetPath (
     echo %RED%[ERROR] No se pudo encontrar winget en el sistema.%RESET%
-    echo Verifique que Microsoft Store App Installer esté instalado.
+    echo Verifique que Microsoft Store App Installer est� instalado.
     pause
     exit /b
 )
@@ -133,8 +133,8 @@ set apps[88]=Agente_ManageEngine
 set apps[89]=Gradle-8.11.zip
 set apps[90]=Politica_USB
 
-:: Opciones de navegación rápidas
-set "NAV=%BRIGHT_CYAN%[A]%RESET% Todo  %BRIGHT_CYAN%[C]%RESET% Confirmar  %BRIGHT_CYAN%[S]%RESET% Salir  %BRIGHT_CYAN%[B]%RESET% Buscar"
+:: Opciones de navegaci�n r�pidas
+set "NAV=%BRIGHT_CYAN%[A]%RESET% Todo  %BRIGHT_CYAN%[C]%RESET% Confirmar  %BRIGHT_CYAN%[S]%RESET% Salir  %BRIGHT_CYAN%[B]%RESET% Buscar  %BRIGHT_CYAN%[M]%RESET% Mouse"
 
 :menu
 cls
@@ -195,15 +195,31 @@ if /i "%selection%" == "98" (
 )
 
 if /i "%selection%" == "97" (
-    call :search_applications
+    call :save_and_search
     pause
     goto menu
 )
 
 if /i "%selection%" == "B" (
-    call :search_applications
+    call :save_and_search
     pause
     goto menu
+)
+
+:: Mouse selection via GUI
+if /i "%selection%" == "M" (
+    call :mouse_selection
+    if exist "%temp%\_mouse_sel.tmp" (
+        set /p "_tmp_sel=" < "%temp%\_mouse_sel.tmp"
+        del "%temp%\_mouse_sel.tmp" 2>nul
+        if defined _tmp_sel (
+            set "selection=!_tmp_sel!"
+        ) else (
+            goto menu
+        )
+    ) else (
+        goto menu
+    )
 )
 
 :: Procesar entrada actualizado
@@ -380,14 +396,14 @@ for %%a in (%applications%) do (
     ) else if "%%a"=="Agente_ManageEngine" (
         call :install_manageengine_agent
     ) else if "%%a"=="Politica_USB" (
-        echo Descargando herramienta de política de USB...
+        echo Descargando herramienta de pol�tica de USB...
         curl -o "%temp%\usb_politica.ps1" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/usb_politica.ps1" 2>nul
         if exist "%temp%\usb_politica.ps1" (
-            echo Ejecutando gestión de política de USB...
+            echo Ejecutando gesti�n de pol�tica de USB...
             powershell -ExecutionPolicy Bypass -File "%temp%\usb_politica.ps1"
             if exist "%temp%\usb_politica.ps1" del "%temp%\usb_politica.ps1"
         ) else (
-            echo ERROR: No se pudo descargar la herramienta de política de USB
+            echo ERROR: No se pudo descargar la herramienta de pol�tica de USB
             set /a error_count+=1
         )
     ) else (
@@ -655,7 +671,7 @@ for %%c in (%carpetasDatos%) do (
     )
 )
 
-:: Registro básico
+:: Registro b�sico
 echo.
 echo ----------------- REGISTRO DE BORRADO -----------------
 echo Nombre del equipo: %COMPUTERNAME%
@@ -675,7 +691,7 @@ goto :eof
 
 exit /b
 
-:: ======== TODAS LAS FUNCIONES DEBEN IR AQUÍ ========
+:: ======== TODAS LAS FUNCIONES DEBEN IR AQU� ========
 
 :install_zip
 set url=%~1
@@ -693,15 +709,15 @@ if not exist "%zipfile%" (
 echo Extrayendo en %dest%...
 if not exist "%dest%" mkdir "%dest%"
 
-:: Intentar Expand-Archive primero, si falla usar método alternativo
+:: Intentar Expand-Archive primero, si falla usar m�todo alternativo
 powershell -Command "try { Expand-Archive -Path '%zipfile%' -DestinationPath '%dest%' -Force } catch { throw 'PowerShell Archive failed' }" 2>nul
 if !errorlevel! neq 0 (
     echo Metodo PowerShell fallo, usando extraccion alternativa...
-    :: Usar tar como método alternativo principal (más confiable)
+    :: Usar tar como m�todo alternativo principal (m�s confiable)
     tar -xf "%zipfile%" -C "%dest%" 2>nul
     if !errorlevel! neq 0 (
         echo Tar fallo, usando VBScript...
-        :: Método VBScript como último recurso
+        :: M�todo VBScript como �ltimo recurso
         echo Set objShell = CreateObject^("Shell.Application"^) > "%temp%\extract.vbs"
         echo Set objFolder = objShell.NameSpace^("%zipfile%"^) >> "%temp%\extract.vbs"
         echo Set objFolderItem = objShell.NameSpace^("%dest%"^) >> "%temp%\extract.vbs"
@@ -714,7 +730,7 @@ if !errorlevel! neq 0 (
 if exist "%zipfile%" del "%zipfile%"
 echo Extraccion completada en %dest%
 
-:: Configuraciones específicas por aplicación
+:: Configuraciones espec�ficas por aplicaci�n
 if /i "%dest%"=="C:\IBMiAccess_v1r1" (
     if exist "%dest%\IBMiAccess_v1r1\QIBM\ProdData\OS400\QDLS" (
         echo Instalando IBM i Access Client Solutions...
@@ -854,7 +870,7 @@ if !install_exit_code! neq 0 (
     echo ERROR en la instalacion ^(codigo de salida: !install_exit_code!^)
     echo Intentando instalacion con parametros alternativos...
     
-    :: Intentar con parámetros alternativos para MongoDB Compass
+    :: Intentar con par�metros alternativos para MongoDB Compass
     if /i "%~nx1"=="mongodb-compass-1-46-5.exe" (
         echo Probando con /VERYSILENT /NORESTART...
         start /wait "" "%exe_file%" /VERYSILENT /NORESTART
@@ -1010,12 +1026,12 @@ if exist "%elixir_dir%\bin" (
 )
 
 if not defined erlang_bin (
-    echo ERROR: No se encontró la carpeta bin de Erlang
+    echo ERROR: No se encontr� la carpeta bin de Erlang
     set /a error_count+=1
     goto :eof
 )
 if not defined elixir_bin (
-    echo ERROR: No se encontró la carpeta bin de Elixir
+    echo ERROR: No se encontr� la carpeta bin de Elixir
     set /a error_count+=1
     goto :eof
 )
@@ -1082,12 +1098,12 @@ for /d %%U in ("%USERS_DIR%\*") do (
             rem Intentar crear con PowerShell primero
             powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!LNK_FILE!'); $s.TargetPath = 'cmd.exe'; $s.Arguments = '/c start \"\" \"!URL!\"'; $s.WorkingDirectory = 'C:\Windows\System32'; if (Test-Path '%ICON_FILE%') { $s.IconLocation = '%ICON_FILE%' }; $s.Save(); exit 0" 2>nul
             
-            rem Verificar si se creó el archivo
+            rem Verificar si se cre� el archivo
             if exist "!LNK_FILE!" (
                 echo [OK] Creado en !TARGET_DESK! (^!_prof!^)
                 set /a created_count+=1
             ) else (
-                rem Método alternativo con VBScript
+                rem M�todo alternativo con VBScript
                 echo Set oWS = WScript.CreateObject^("WScript.Shell"^) > "!VBS_FILE!"
                 echo sLinkFile = "!LNK_FILE!" >> "!VBS_FILE!"
                 echo Set oLink = oWS.CreateShortcut^(sLinkFile^) >> "!VBS_FILE!"
@@ -1134,7 +1150,7 @@ echo Esta herramienta crea un acceso directo al HelpDesk
 echo en la carpeta OneDrive del usuario seleccionado.
 echo.
 
-:: URLs y configuración
+:: URLs y configuraci�n
 set "URL=https://helpdesksupport1743707502741.servicedesk.atera.com/login?redirectTo=tickets%%2Fadd"
 set "ICON_URL=https://xelerica.com/assets/images/icono.ico"
 set "ICON_FILE=%temp%\icono_helpdesk.ico"
@@ -1253,7 +1269,7 @@ echo.
 echo Creando acceso directo en: !LNK_FILE!
 echo.
 
-:: Método con PowerShell
+:: M�todo con PowerShell
 powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!LNK_FILE!'); $s.TargetPath = 'C:\Program Files\Internet Explorer\iexplore.exe'; $s.Arguments = '!URL!'; $s.WorkingDirectory = '%USER_PATH%'; if (Test-Path '%ICON_FILE%') { $s.IconLocation = '%ICON_FILE%' }; $s.Save(); exit 0" 2>nul
 
 if !errorlevel! equ 0 (
@@ -1269,7 +1285,7 @@ if !errorlevel! equ 0 (
     echo [ERROR] Fallo al crear el acceso directo
     echo Intentando con metodo alternativo VBScript...
     
-    :: Método alternativo con VBScript
+    :: M�todo alternativo con VBScript
     set "VBS_FILE=%temp%\create_shortcut_hd.vbs"
     echo Set oWS = WScript.CreateObject^("WScript.Shell"^) > "!VBS_FILE!"
     echo sLinkFile = "!LNK_FILE!" >> "!VBS_FILE!"
@@ -1415,16 +1431,20 @@ echo.
 
 :select_package_manager
 echo Seleccione el gestor de paquetes:
-echo [1] WinGet
-echo [2] Chocolatey
-echo [3] Cancelar
+echo [1] WinGet (modo texto)
+echo [2] Chocolatey (modo texto)
+echo [3] Interfaz grafica (PowerShell GUI)
+echo [4] Cancelar
 echo.
 set "pm_choice="
-set /p "pm_choice=Ingrese su opcion (1/2/3): "
+set /p "pm_choice=Ingrese su opcion (1/2/3/4): "
 
-if "%pm_choice%"=="1" goto use_winget
-if "%pm_choice%"=="2" goto use_choco
-if "%pm_choice%"=="3" goto cancel_pm
+:: Limpiar espacios y caracteres ocultos
+set "pm_choice=!pm_choice: =!"
+if "!pm_choice!"=="1" goto use_winget
+if "!pm_choice!"=="2" goto use_choco
+if "!pm_choice!"=="3" goto use_pm_gui
+if "!pm_choice!"=="4" goto cancel_pm
 echo.
 echo Opcion invalida. Intente nuevamente.
 pause
@@ -1451,7 +1471,7 @@ if not defined search_term (
 echo.
 echo Buscando "!search_term!" en WinGet...
 echo --------------------------------------------------
-"%wingetPath%" search "!search_term!"
+call :run_winget search "!search_term!"
 echo --------------------------------------------------
 echo.
 
@@ -1470,7 +1490,7 @@ echo.
 echo --------------------------------------------------
 echo Verificando version instalada de !package_id!...
 echo --------------------------------------------------
-"%wingetPath%" list --id "!package_id!" --exact
+call :run_winget list --id "!package_id!" --exact
 echo --------------------------------------------------
 echo.
 
@@ -1569,6 +1589,19 @@ echo.
 pause
 goto end_pm
 
+:use_pm_gui
+cls
+echo ==================================================
+echo    INTERFAZ GRAFICA - BUSCAR E INSTALAR
+echo ==================================================
+echo.
+echo Abriendo ventana grafica de PowerShell...
+echo.
+call :install_with_pm_gui
+echo.
+pause
+goto end_pm
+
 :cancel_pm
 echo.
 echo Operacion cancelada.
@@ -1578,7 +1611,157 @@ goto end_pm
 :end_pm
 endlocal & goto :eof
 
-:: Función para buscar winget
+:: ======== INTERFAZ GRAFICA PARA APP 85 (WINGET/CHOCO) ========
+:install_with_pm_gui
+setlocal enabledelayedexpansion
+set "_psfile=%temp%\_pm_gui.ps1"
+if exist "!_psfile!" del "!_psfile!" 2>nul
+
+>>"!_psfile!" echo Add-Type -AssemblyName System.Windows.Forms
+>>"!_psfile!" echo Add-Type -AssemblyName System.Drawing
+>>"!_psfile!" echo $form = New-Object System.Windows.Forms.Form
+>>"!_psfile!" echo $form.Text = "Instalador - WinGet / Chocolatey GUI"
+>>"!_psfile!" echo $form.Size = New-Object System.Drawing.Size^(700,530^)
+>>"!_psfile!" echo $form.StartPosition = "CenterScreen"
+>>"!_psfile!" echo $form.Font = New-Object System.Drawing.Font^("Consolas",9^)
+>>"!_psfile!" echo $srcLabel = New-Object System.Windows.Forms.Label
+>>"!_psfile!" echo $srcLabel.Text = "Fuente:"
+>>"!_psfile!" echo $srcLabel.Location = New-Object System.Drawing.Point^(15,15^)
+>>"!_psfile!" echo $srcLabel.Size = New-Object System.Drawing.Size^(50,25^)
+>>"!_psfile!" echo $srcCombo = New-Object System.Windows.Forms.ComboBox
+>>"!_psfile!" echo $srcCombo.Location = New-Object System.Drawing.Point^(70,12^)
+>>"!_psfile!" echo $srcCombo.Size = New-Object System.Drawing.Size^(130,25^)
+>>"!_psfile!" echo $srcCombo.DropDownStyle = "DropDownList"
+>>"!_psfile!" echo [void]$srcCombo.Items.Add^("WinGet"^)
+>>"!_psfile!" echo [void]$srcCombo.Items.Add^("Chocolatey"^)
+>>"!_psfile!" echo $srcCombo.SelectedIndex = 0
+>>"!_psfile!" echo $searchBox = New-Object System.Windows.Forms.TextBox
+>>"!_psfile!" echo $searchBox.Location = New-Object System.Drawing.Point^(210,12^)
+>>"!_psfile!" echo $searchBox.Size = New-Object System.Drawing.Size^(260,25^)
+>>"!_psfile!" echo $searchBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $searchBtn.Text = "Buscar"
+>>"!_psfile!" echo $searchBtn.Location = New-Object System.Drawing.Point^(480,10^)
+>>"!_psfile!" echo $searchBtn.Size = New-Object System.Drawing.Size^(80,28^)
+>>"!_psfile!" echo $resultList = New-Object System.Windows.Forms.ListBox
+>>"!_psfile!" echo $resultList.Location = New-Object System.Drawing.Point^(15,45^)
+>>"!_psfile!" echo $resultList.Size = New-Object System.Drawing.Size^(660,370^)
+>>"!_psfile!" echo $resultList.SelectionMode = "MultiExtended"
+>>"!_psfile!" echo $installBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $installBtn.Text = "Instalar seleccionado"
+>>"!_psfile!" echo $installBtn.Location = New-Object System.Drawing.Point^(200,430^)
+>>"!_psfile!" echo $installBtn.Size = New-Object System.Drawing.Size^(140,30^)
+>>"!_psfile!" echo $installBtn.Enabled = $false
+>>"!_psfile!" echo $closeBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $closeBtn.Text = "Cerrar"
+>>"!_psfile!" echo $closeBtn.Location = New-Object System.Drawing.Point^(360,430^)
+>>"!_psfile!" echo $closeBtn.Size = New-Object System.Drawing.Size^(80,30^)
+>>"!_psfile!" echo $statusLabel = New-Object System.Windows.Forms.Label
+>>"!_psfile!" echo $statusLabel.Text = "Listo"
+>>"!_psfile!" echo $statusLabel.Location = New-Object System.Drawing.Point^(15,470^)
+>>"!_psfile!" echo $statusLabel.Size = New-Object System.Drawing.Size^(660,20^)
+>>"!_psfile!" echo $searchBtn.Add_Click^({
+>>"!_psfile!" echo     $searchBtn.Enabled = $false
+>>"!_psfile!" echo     $statusLabel.Text = "Buscando..."
+>>"!_psfile!" echo     $resultList.Items.Clear^(^)
+>>"!_psfile!" echo     $installBtn.Enabled = $false
+>>"!_psfile!" echo     $term = $searchBox.Text.Trim^(^)
+>>"!_psfile!" echo     if ^(-not $term^) {
+>>"!_psfile!" echo         $statusLabel.Text = "Ingrese un termino de busqueda"
+>>"!_psfile!" echo         $searchBtn.Enabled = $true
+>>"!_psfile!" echo         return
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     try {
+>>"!_psfile!" echo         if ^($srcCombo.SelectedItem -eq "WinGet"^) {
+>>"!_psfile!" echo             $result = ^(winget search $term --accept-source-agreements 2^>^&1^)
+>>"!_psfile!" echo         } else {
+>>"!_psfile!" echo             $result = ^(choco search $term 2^>^&1^)
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo         foreach ^($line in $result^) {
+>>"!_psfile!" echo             if ^($line.Trim^(^)^) {
+>>"!_psfile!" echo                 [void]$resultList.Items.Add^($line^)
+>>"!_psfile!" echo             }
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo         $statusLabel.Text = "Encontrados: " + $resultList.Items.Count + " resultados"
+>>"!_psfile!" echo     } catch {
+>>"!_psfile!" echo         $statusLabel.Text = "Error: " + $_.Exception.Message
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $searchBtn.Enabled = $true
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $resultList.Add_SelectedIndexChanged^({
+>>"!_psfile!" echo     $installBtn.Enabled = $resultList.SelectedItems.Count -gt 0
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $installBtn.Add_Click^({
+>>"!_psfile!" echo     if ^($resultList.SelectedItem^) {
+>>"!_psfile!" echo         $pkgId = $resultList.SelectedItem -split '\s+' ^| Select-Object -First 1
+>>"!_psfile!" echo         $confirm = [System.Windows.Forms.MessageBox]::Show^("Instalar '$pkgId'?","Confirmar","YesNo","Question"^)
+>>"!_psfile!" echo         if ^($confirm -eq "Yes"^) {
+>>"!_psfile!" echo             $statusLabel.Text = "Instalando " + $pkgId + "..."
+>>"!_psfile!" echo             try {
+>>"!_psfile!" echo                 if ^($srcCombo.SelectedItem -eq "WinGet"^) {
+>>"!_psfile!" echo                     winget install --id $pkgId --silent --accept-package-agreements --accept-source-agreements
+>>"!_psfile!" echo                 } else {
+>>"!_psfile!" echo                     choco install $pkgId -y
+>>"!_psfile!" echo                 }
+>>"!_psfile!" echo                 [System.Windows.Forms.MessageBox]::Show^("Instalacion completada","Info","OK","Information"^)
+>>"!_psfile!" echo                 $statusLabel.Text = "Instalacion completada: " + $pkgId
+>>"!_psfile!" echo             } catch {
+>>"!_psfile!" echo                 [System.Windows.Forms.MessageBox]::Show^("Error: $_","Error","OK","Error"^)
+>>"!_psfile!" echo                 $statusLabel.Text = "Error al instalar " + $pkgId
+>>"!_psfile!" echo             }
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $closeBtn.Add_Click^({ $form.Close^(^) })
+>>"!_psfile!" echo $searchBox.Add_KeyDown^({
+>>"!_psfile!" echo     if ^($_.KeyCode -eq "Enter"^) { $searchBtn.PerformClick^(^) }
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $form.Controls.Add^($srcLabel^)
+>>"!_psfile!" echo $form.Controls.Add^($srcCombo^)
+>>"!_psfile!" echo $form.Controls.Add^($searchBox^)
+>>"!_psfile!" echo $form.Controls.Add^($searchBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($resultList^)
+>>"!_psfile!" echo $form.Controls.Add^($installBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($closeBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($statusLabel^)
+>>"!_psfile!" echo $form.ShowDialog^(^)
+
+powershell -ExecutionPolicy Bypass -File "!_psfile!"
+del "!_psfile!" 2>nul
+endlocal
+goto :eof
+
+:: Ejecuta winget probando PATH, PowerShell, %%LOCALAPPDATA%%, y wingetPath
+:run_winget
+setlocal enabledelayedexpansion
+set "wg_args=%*"
+
+:: 1) Via PowerShell (mejor resolucion de App Execution Alias en remoto)
+powershell -Command "winget !wg_args!" 2>nul
+if !errorlevel! equ 0 endlocal & exit /b 0
+
+:: 2) Directo desde PATH
+winget !wg_args! 2>nul
+if !errorlevel! equ 0 endlocal & exit /b 0
+
+:: 3) Ruta directa %%LOCALAPPDATA%
+set "wg_user=%LOCALAPPDATA%\Microsoft\WindowsApps\winget.exe"
+if exist "!wg_user!" (
+    "!wg_user!" !wg_args! 2>nul
+    if !errorlevel! equ 0 endlocal & exit /b 0
+)
+
+:: 4) Ruta almacenada wingetPath
+if defined wingetPath (
+    if exist "!wingetPath!" (
+        "!wingetPath!" !wg_args! 2>nul
+        if !errorlevel! equ 0 endlocal & exit /b 0
+    )
+)
+
+echo [ERROR] winget no disponible. Use Chocolatey (opcion 2) o consola local.
+endlocal & exit /b 1
+
+:: Funci�n para buscar winget
 :find_winget
 set "wingetPath="
 
@@ -1627,7 +1810,23 @@ shift
 set "install_args=%*"
 set "winget_log=%temp%\winget_install_%random%%random%.log"
 
-call "%wingetPath%" install --id "!package_id!" !install_args! --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
+set "install_cmd="
+where winget >nul 2>&1
+if !errorlevel! equ 0 ( set "install_cmd=winget"
+) else (
+    set "wg_user=%LOCALAPPDATA%\Microsoft\WindowsApps\winget.exe"
+    if exist "!wg_user!" ( set "install_cmd=!wg_user!"
+    ) else if defined wingetPath ( set "install_cmd=!wingetPath!"
+    )
+)
+
+if not defined install_cmd (
+    echo [ERROR] winget no encontrado en PATH, %%LOCALAPPDATA%% ni wingetPath
+    set "install_exit=1"
+    goto :winget_install_end
+)
+
+"!install_cmd!" install --id "!package_id!" !install_args! --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
 set "install_exit=!errorlevel!"
 type "!winget_log!"
 
@@ -1635,13 +1834,24 @@ if !install_exit! neq 0 (
     findstr /C:"Please specify one of them using the --source option to proceed." /C:"Failed when searching source: msstore" "!winget_log!" >nul
     if !errorlevel! equ 0 (
         echo [INFO] Reintentando instalacion con --source winget...
-        call "%wingetPath%" install --id "!package_id!" !install_args! --source winget --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
+        "!install_cmd!" install --id "!package_id!" !install_args! --source winget --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
         set "install_exit=!errorlevel!"
         type "!winget_log!"
+    ) else (
+        findstr /C:"cannot execute" /C:"no se puede ejecutar" /C:"no puede ejecutar" "!winget_log!" >nul 2>&1
+        if !errorlevel! equ 0 (
+            echo [INFO] Reintentando via PowerShell...
+            powershell -Command "winget install --id '!package_id!' !install_args! --accept-package-agreements --accept-source-agreements" > "!winget_log!" 2>&1
+            set "install_exit=!errorlevel!"
+            type "!winget_log!"
+        )
     )
 )
 
 if exist "!winget_log!" del "!winget_log!"
+goto :winget_install_end
+
+:winget_install_end
 endlocal & exit /b %install_exit%
 
 :install_winget_update
@@ -1734,7 +1944,7 @@ if %user_count% equ 0 (
 echo.
 set /p "user_selection=Seleccione el numero del usuario (1-%user_count%): "
 
-:: Validar selección
+:: Validar selecci�n
 set "selected_user="
 for %%i in (%user_list%) do (
     if "%user_selection%"=="%%i" (
@@ -1831,7 +2041,7 @@ echo   INSTALACION DE NPM APPIUM
 echo ===============================================
 echo.
 
-:: Verificar que Node.js esté instalado
+:: Verificar que Node.js est� instalado
 where node >nul 2>&1
 if !errorlevel! neq 0 (
     echo ERROR: Node.js no esta instalado en el sistema.
@@ -1841,7 +2051,7 @@ if !errorlevel! neq 0 (
     goto :eof
 )
 
-:: Verificar que npm esté disponible
+:: Verificar que npm est� disponible
 where npm >nul 2>&1
 if !errorlevel! neq 0 (
     echo ERROR: NPM no esta disponible en el sistema.
@@ -1881,7 +2091,7 @@ if !user_count! equ 0 (
 echo.
 set /p "user_selection=Seleccione el numero del usuario (1-!user_count!): "
 
-:: Validar selección usando método directo
+:: Validar selecci�n usando m�todo directo
 set "selected_user="
 if "!user_selection!"=="1" set "selected_user=!user_1!"
 if "!user_selection!"=="2" set "selected_user=!user_2!"
@@ -1963,7 +2173,7 @@ echo Configurando npm prefix...
 call npm config set prefix "!npm_folder!"
 call npm config set cache "!npm_folder!\npm-cache"
 
-:: Mostrar configuración actual
+:: Mostrar configuraci�n actual
 echo Configuracion npm actual:
 call npm config get prefix
 call npm config get cache
@@ -1998,7 +2208,7 @@ if !install_result! neq 0 (
 
 popd
 
-:: Verificar instalación
+:: Verificar instalaci�n
 echo.
 echo Verificando instalacion...
 if exist "!npm_folder!\appium.cmd" (
@@ -2024,7 +2234,7 @@ echo Agregando !npm_folder! al PATH del sistema...
 :: Obtener PATH actual
 for /f "skip=2 tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH 2^>nul') do set "current_path=%%b"
 
-:: Verificar si la ruta ya está en PATH
+:: Verificar si la ruta ya est� en PATH
 echo !current_path! | findstr /i "!npm_folder!" >nul
 if !errorlevel! equ 0 (
     echo [INFO] La ruta !npm_folder! ya esta en el PATH del sistema
@@ -2034,7 +2244,7 @@ if !errorlevel! equ 0 (
     echo [INFO] Ruta agregada al PATH del sistema
 )
 
-:: También agregar la carpeta de binarios si existe
+:: Tambi�n agregar la carpeta de binarios si existe
 set "npm_bin_folder=!npm_folder!\node_modules\.bin"
 if exist "!npm_bin_folder!" (
     echo !current_path! | findstr /i "!npm_bin_folder!" >nul
@@ -2090,7 +2300,7 @@ echo.
 echo Buscando aplicaciones que contengan: "!search_term!"
 echo ===============================================
 
-:: Buscar aplicaciones que contengan el término
+:: Buscar aplicaciones que contengan el t�rmino
 set "found_count=0"
 set "found_apps="
 set "found_numbers="
@@ -2125,19 +2335,23 @@ echo Se encontraron !found_count! aplicacion(es)
 echo ===============================================
 echo.
 echo Opciones:
-echo [1] Seleccionar todas las aplicaciones encontradas
-echo [2] Seleccionar aplicaciones especificas
-echo [3] Volver al menu principal
+echo [1] Instalar todas las aplicaciones encontradas ahora
+echo [2] Seleccionar aplicaciones especificas e instalarlas ahora
+echo [3] Agregar todas a la seleccion actual (volver al menu)
+echo [4] Agregar aplicaciones especificas a la seleccion actual
+echo [5] Volver al menu principal
 echo.
-set /p "search_action=Seleccione una opcion (1-3): "
+set /p "search_action=Seleccione una opcion (1-5): "
 
 if "!search_action!"=="1" (
-    :: Seleccionar todas las encontradas
     call :install_found_apps "!found_apps!"
 ) else if "!search_action!"=="2" (
-    :: Selección específica
     call :select_specific_apps "!found_apps!"
 ) else if "!search_action!"=="3" (
+    call :add_found_to_selection "!found_apps!"
+) else if "!search_action!"=="4" (
+    call :add_specific_to_selection "!found_apps!"
+) else if "!search_action!"=="5" (
     endlocal
     goto :eof
 ) else (
@@ -2163,14 +2377,14 @@ for %%i in (!selected_apps!) do (
 )
 
 echo.
-echo ¿Instalar estas aplicaciones?
+echo �Instalar estas aplicaciones?
 choice /C SN /N /M "[S] Si  [N] No: "
 if !errorlevel! equ 2 (
     endlocal
     goto :eof
 )
 
-:: Proceso de instalación (usar el mismo código del proceso principal)
+:: Proceso de instalaci�n (usar el mismo c�digo del proceso principal)
 call :process_installation "!applications!"
 
 endlocal
@@ -2198,7 +2412,7 @@ if "!specific_selection!"=="" (
     goto :eof
 )
 
-:: Validar que los números seleccionados estén en la lista de encontrados
+:: Validar que los n�meros seleccionados est�n en la lista de encontrados
 set "valid_selection="
 set "applications="
 
@@ -2209,7 +2423,7 @@ for %%a in ("!specific_selection:,=" "%") do (
         :: Es un rango
         for /f "tokens=1,2 delims=-" %%b in ("!range!") do (
             for /l %%k in (%%b,1,%%c) do (
-                :: Verificar que el número esté en la lista de encontrados
+                :: Verificar que el n�mero est� en la lista de encontrados
                 for %%j in (!available_apps!) do (
                     if %%k equ %%j (
                         set "valid_selection=!valid_selection! %%k"
@@ -2219,7 +2433,7 @@ for %%a in ("!specific_selection:,=" "%") do (
             )
         )
     ) else (
-        :: Es un número individual
+        :: Es un n�mero individual
         for %%j in (!available_apps!) do (
             if !range! equ %%j (
                 set "valid_selection=!valid_selection! !range!"
@@ -2241,14 +2455,14 @@ echo --------------------------
 for %%a in (!applications!) do echo  - %%a
 
 echo.
-echo ¿Instalar estas aplicaciones?
+echo �Instalar estas aplicaciones?
 choice /C SN /N /M "[S] Si  [N] No: "
 if !errorlevel! equ 2 (
     endlocal
     goto :eof
 )
 
-:: Proceso de instalación
+:: Proceso de instalaci�n
 call :process_installation "!applications!"
 
 endlocal
@@ -2258,7 +2472,7 @@ goto :eof
 setlocal enabledelayedexpansion
 set "applications=%~1"
 
-:: Proceso de instalación (copiar desde el código principal)
+:: Proceso de instalaci�n (copiar desde el c�digo principal)
 set error_count=0
 set application_count=0
 
@@ -2269,7 +2483,7 @@ for %%a in (!applications!) do (
     echo.
     echo [%time%] Instalando %%a...
     
-    :: Usar la misma lógica de instalación del código principal
+    :: Usar la misma l�gica de instalaci�n del c�digo principal
     if "%%a"=="IBMiAccess_v1r1.zip" (
         call :install_zip "https://www.nicklitten.com/wp-content/uploads/IBMiAccess_v1r1.zip" "C:\IBMiAccess_v1r1"
     ) else if "%%a"=="apache-maven-3.9.11-bin.zip" (
@@ -2349,6 +2563,154 @@ echo ===============================================
 endlocal
 goto :eof
 
+:: ======== FUNCIONES DE SELECCION Y BUSQUEDA ========
+
+:save_and_search
+if defined applications set "_saved_apps=%applications%"
+if exist "%temp%\_search_sel.tmp" del "%temp%\_search_sel.tmp" 2>nul
+call :search_applications
+if exist "%temp%\_search_sel.tmp" (
+    set /p "_search_add=" < "%temp%\_search_sel.tmp"
+    del "%temp%\_search_sel.tmp" 2>nul
+    if defined _search_add (
+        if defined _saved_apps (
+            set "applications=!_saved_apps! !_search_add!"
+        ) else (
+            set "applications=!_search_add!"
+        )
+        echo.
+        echo %GREEN%[+] Aplicaciones agregadas a la seleccion actual.%RESET%
+    ) else if defined _saved_apps (
+        set "applications=!_saved_apps!"
+    )
+) else if defined _saved_apps (
+    set "applications=!_saved_apps!"
+)
+goto :eof
+
+:add_found_to_selection
+setlocal enabledelayedexpansion
+set "found_nums=%~1"
+set "apps_to_add="
+for %%i in (!found_nums!) do (
+    set "apps_to_add=!apps_to_add! !apps[%%i]!"
+)
+if defined apps_to_add (
+    echo(!apps_to_add!> "%temp%\_search_sel.tmp"
+    echo %GREEN%[OK] Todas las aplicaciones encontradas se agregaron a la seleccion.%RESET%
+) else (
+    echo %RED%[ERROR] No se pudieron agregar las aplicaciones.%RESET%
+)
+endlocal
+goto :eof
+
+:add_specific_to_selection
+setlocal enabledelayedexpansion
+set "available_apps=%~1"
+
+echo.
+echo Aplicaciones disponibles:
+echo ------------------------
+for %%i in (!available_apps!) do (
+    echo  %%i. !apps[%%i]!
+)
+
+echo.
+echo Ingrese los numeros de las aplicaciones que desea agregar a la seleccion
+echo (separados por comas, ej: 2,5,7 o rangos como 2-5):
+set /p "specific_selection=Seleccion: "
+
+if "!specific_selection!"=="" (
+    echo No se selecciono ninguna aplicacion.
+    endlocal
+    goto :eof
+)
+
+set "apps_to_add="
+for %%a in ("!specific_selection:,=" "%") do (
+    set "range=%%~a"
+    if "!range:-=!" neq "!range!" (
+        for /f "tokens=1,2 delims=-" %%b in ("!range!") do (
+            for /l %%k in (%%b,1,%%c) do (
+                for %%j in (!available_apps!) do (
+                    if %%k equ %%j (
+                        set "apps_to_add=!apps_to_add! !apps[%%k]!"
+                    )
+                )
+            )
+        )
+    ) else (
+        for %%j in (!available_apps!) do (
+            if !range! equ %%j (
+                set "apps_to_add=!apps_to_add! !apps[%%j]!"
+            )
+        )
+    )
+)
+
+if defined apps_to_add (
+    echo(!apps_to_add!> "%temp%\_search_sel.tmp"
+    echo %GREEN%[OK] Aplicaciones agregadas a la seleccion actual.%RESET%
+) else (
+    echo %RED%ERROR: No se seleccionaron aplicaciones validas.%RESET%
+)
+endlocal
+goto :eof
+
+:mouse_selection
+setlocal enabledelayedexpansion
+set "_appsfile=%temp%\_mouse_apps.txt"
+set "_psfile=%temp%\_mouse_sel.ps1"
+
+if exist "!_appsfile!" del "!_appsfile!" 2>nul
+for /l %%i in (1,1,90) do (
+    if defined apps[%%i] (
+        set "n=%%i"
+        if %%i lss 10 set "n=0%%i"
+        >>"!_appsfile!" echo !n!. !apps[%%i]!
+    )
+)
+
+if exist "!_psfile!" del "!_psfile!" 2>nul
+>>"!_psfile!" echo Add-Type -AssemblyName System.Windows.Forms
+>>"!_psfile!" echo Add-Type -AssemblyName System.Drawing
+>>"!_psfile!" echo $form = New-Object System.Windows.Forms.Form
+>>"!_psfile!" echo $form.Text = "Gamez Code Solutions - Seleccion con Mouse"
+>>"!_psfile!" echo $form.Size = New-Object System.Drawing.Size^(600,500^)
+>>"!_psfile!" echo $form.StartPosition = "CenterScreen"
+>>"!_psfile!" echo $form.Font = New-Object System.Drawing.Font^("Consolas",9^)
+>>"!_psfile!" echo $checklist = New-Object System.Windows.Forms.CheckedListBox
+>>"!_psfile!" echo $checklist.Size = New-Object System.Drawing.Size^(560,380^)
+>>"!_psfile!" echo $checklist.Location = New-Object System.Drawing.Point^(15,15^)
+>>"!_psfile!" echo $checklist.CheckOnClick = $true
+>>"!_psfile!" echo $apps = Get-Content "!_appsfile!"
+>>"!_psfile!" echo $apps ^| ForEach-Object { [void]$checklist.Items.Add^($_) }
+>>"!_psfile!" echo $okBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $okBtn.Text = "OK"
+>>"!_psfile!" echo $okBtn.Location = New-Object System.Drawing.Point^(200,410^)
+>>"!_psfile!" echo $okBtn.Size = New-Object System.Drawing.Size^(80,30^)
+>>"!_psfile!" echo $okBtn.Add_Click^({
+>>"!_psfile!" echo     $sel = @^(^)
+>>"!_psfile!" echo     foreach^($i in $checklist.CheckedIndices^) { $sel += $i + 1 }
+>>"!_psfile!" echo     $sel -join "," ^| Out-File "$env:TEMP\_mouse_sel.tmp" -Encoding ASCII
+>>"!_psfile!" echo     $form.Close^(^)
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $cancelBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $cancelBtn.Text = "Cancelar"
+>>"!_psfile!" echo $cancelBtn.Location = New-Object System.Drawing.Point^(300,410^)
+>>"!_psfile!" echo $cancelBtn.Size = New-Object System.Drawing.Size^(80,30^)
+>>"!_psfile!" echo $cancelBtn.Add_Click^({ $form.Close^(^) })
+>>"!_psfile!" echo $form.Controls.Add^($checklist^)
+>>"!_psfile!" echo $form.Controls.Add^($okBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($cancelBtn^)
+>>"!_psfile!" echo $form.ShowDialog^()
+
+powershell -ExecutionPolicy Bypass -File "!_psfile!" >nul 2>&1
+
+del "!_appsfile!" "!_psfile!" 2>nul
+endlocal
+goto :eof
+
 :install_ofimabot
 setlocal enabledelayedexpansion
 
@@ -2376,7 +2738,7 @@ if not exist "%ofimabot_zip%" (
 echo Verificando archivo descargado...
 for %%F in ("%ofimabot_zip%") do set file_size=%%~zF
 if %file_size% LSS 10000 (
-    echo ERROR: Archivo descargado incompleto ^(tamaño: %file_size% bytes^)
+    echo ERROR: Archivo descargado incompleto ^(tama�o: %file_size% bytes^)
     echo El archivo puede estar corrupto o la URL no es valida.
     set /a error_count+=1
     if exist "%ofimabot_zip%" del "%ofimabot_zip%"
@@ -2384,16 +2746,16 @@ if %file_size% LSS 10000 (
     goto :eof
 )
 
-echo [INFO] Archivo descargado correctamente ^(tamaño: %file_size% bytes^)
+echo [INFO] Archivo descargado correctamente ^(tama�o: %file_size% bytes^)
 
 echo.
 echo Extrayendo OfimaBot...
 if not exist "%extract_dir%" mkdir "%extract_dir%"
 
-:: Intentar extracción con PowerShell primero
+:: Intentar extracci�n con PowerShell primero
 powershell -Command "try { Expand-Archive -Path '%ofimabot_zip%' -DestinationPath '%extract_dir%' -Force; Write-Host 'Extraccion PowerShell exitosa' } catch { Write-Host 'Error en extraccion PowerShell' }"
 
-:: Verificar si la extracción fue exitosa
+:: Verificar si la extracci�n fue exitosa
 set "exe_found="
 for /r "%extract_dir%" %%f in (*.exe) do (
     if /i "%%~nf"=="Ofimabot" (
@@ -2402,7 +2764,7 @@ for /r "%extract_dir%" %%f in (*.exe) do (
     )
 )
 
-:: Si no se encontró con PowerShell, intentar con tar
+:: Si no se encontr� con PowerShell, intentar con tar
 if not defined exe_found (
     echo Intentando extraccion alternativa con tar...
     tar -xf "%ofimabot_zip%" -C "%extract_dir%" 2>nul
@@ -2416,7 +2778,7 @@ if not defined exe_found (
     )
 )
 
-:: Si aún no se encuentra, intentar con VBScript
+:: Si a�n no se encuentra, intentar con VBScript
 if not defined exe_found (
     echo Intentando extraccion con VBScript...
     echo Set objShell = CreateObject^("Shell.Application"^) > "%temp%\extract_ofimabot.vbs"
@@ -2426,7 +2788,7 @@ if not defined exe_found (
     cscript //nologo "%temp%\extract_ofimabot.vbs" 2>nul
     del "%temp%\extract_ofimabot.vbs"
     
-    :: Buscar una vez más el ejecutable
+    :: Buscar una vez m�s el ejecutable
     for /r "%extract_dir%" %%f in (*.exe) do (
         if /i "%%~nf"=="Ofimabot" (
             set "exe_found=%%f"
@@ -2447,7 +2809,7 @@ echo.
 echo Instalando OfimaBot silenciosamente...
 echo Ejecutable encontrado en: !exe_found!
 
-:: Intentar instalación silenciosa con diferentes parámetros
+:: Intentar instalaci�n silenciosa con diferentes par�metros
 echo Probando instalacion con parametros silenciosos /S...
 start /wait "" "!exe_found!" /S
 set install_result=!errorlevel!
@@ -2524,17 +2886,17 @@ if not exist "%uipath_msi%" (
     goto :cleanup_uipath
 )
 
-:: Verificar tamaño del archivo (debe ser mayor a 1MB)
+:: Verificar tama�o del archivo (debe ser mayor a 1MB)
 for %%F in ("%uipath_msi%") do set file_size=%%~zF
 if %file_size% lss 1048576 (
     echo ERROR: El archivo descargado parece estar incompleto o corrupto
-    echo Tamaño del archivo: %file_size% bytes
+    echo Tama�o del archivo: %file_size% bytes
     if exist "%uipath_msi%" del "%uipath_msi%"
     set /a error_count+=1
     goto :cleanup_uipath
 )
 
-echo Archivo descargado correctamente. Tamaño: %file_size% bytes
+echo Archivo descargado correctamente. Tama�o: %file_size% bytes
 echo.
 echo Ejecutando instalacion silenciosa de UIPath Studio Community...
 echo [INFO] Esto puede tomar varios minutos, por favor espere...
@@ -2590,17 +2952,17 @@ if not exist "%office365_exe%" (
     goto :cleanup_office365
 )
 
-:: Verificar tamaño del archivo (debe ser mayor a 5MB)
+:: Verificar tama�o del archivo (debe ser mayor a 5MB)
 for %%F in ("%office365_exe%") do set file_size=%%~zF
 if %file_size% lss 5242880 (
     echo ERROR: El archivo descargado parece estar incompleto o corrupto
-    echo Tamaño del archivo: %file_size% bytes
+    echo Tama�o del archivo: %file_size% bytes
     if exist "%office365_exe%" del "%office365_exe%"
     set /a error_count+=1
     goto :cleanup_office365
 )
 
-echo Archivo descargado correctamente. Tamaño: %file_size% bytes
+echo Archivo descargado correctamente. Tama�o: %file_size% bytes
 echo.
 echo Ejecutando instalacion desatendida de Office 365 32-bits...
 echo [INFO] Office se instalara en segundo plano
@@ -2720,7 +3082,7 @@ if not defined msi_url (
 )
 
 :validate_url
-:: Validar que la URL parece válida (contiene http)
+:: Validar que la URL parece v�lida (contiene http)
 echo !msi_url! | findstr /i "http" >nul
 if !errorlevel! neq 0 (
     echo.
@@ -2732,10 +3094,10 @@ if !errorlevel! neq 0 (
 
 :ask_mst_url
 echo.
-echo ¿Tiene una URL de descarga para un archivo MST (Transform)?
-echo El archivo MST permite personalizar la instalación.
+echo �Tiene una URL de descarga para un archivo MST (Transform)?
+echo El archivo MST permite personalizar la instalaci�n.
 echo.
-set /p "use_mst=Ingrese S para sí, N para no, o C para cancelar: "
+set /p "use_mst=Ingrese S para s�, N para no, o C para cancelar: "
 if /i "!use_mst!"=="C" goto cancel_manageengine
 if /i "!use_mst!"=="S" (
     set "mst_url="
@@ -2746,7 +3108,7 @@ if /i "!use_mst!"=="S" (
         pause
         goto ask_mst_url
     )
-    :: Validar que la URL del MST parece válida
+    :: Validar que la URL del MST parece v�lida
     echo !mst_url! | findstr /i "http" >nul
     if !errorlevel! neq 0 (
         echo.
@@ -2759,14 +3121,14 @@ if /i "!use_mst!"=="S" (
     set "mst_url="
 ) else (
     echo.
-    echo Opción inválida. Intente nuevamente.
+    echo Opci�n inv�lida. Intente nuevamente.
     pause
     goto ask_mst_url
 )
 
 echo.
 echo --------------------------------------------------
-echo RESUMEN DE LA INSTALACIÓN
+echo RESUMEN DE LA INSTALACI�N
 echo --------------------------------------------------
 echo URL del agente: !msi_url!
 if defined mst_url (
@@ -2775,7 +3137,7 @@ if defined mst_url (
     echo Archivo MST: No especificado
 )
 echo.
-set /p "confirm=¿Desea continuar con la descarga e instalación? (S/N): "
+set /p "confirm=�Desea continuar con la descarga e instalaci�n? (S/N): "
 if /i not "!confirm!"=="S" goto cancel_manageengine
 
 :: Detectar tipo de archivo por la URL
@@ -2800,7 +3162,7 @@ powershell -NoProfile -Command "(New-Object System.Net.WebClient).DownloadFile('
 if !errorlevel! neq 0 (
     echo.
     echo [ERROR] No se pudo descargar el archivo del agente.
-    echo Verifique la URL y su conexión a internet.
+    echo Verifique la URL y su conexi�n a internet.
     set /a error_count+=1
     pause
     goto cancel_manageengine
@@ -2808,7 +3170,7 @@ if !errorlevel! neq 0 (
 
 if not exist "!agent_file!" (
     echo.
-    echo [ERROR] El archivo del agente no se descargó correctamente.
+    echo [ERROR] El archivo del agente no se descarg� correctamente.
     set /a error_count+=1
     pause
     goto cancel_manageengine
@@ -2816,7 +3178,7 @@ if not exist "!agent_file!" (
 
 echo [OK] Agente (!file_type!) descargado correctamente.
 
-:: Descargar archivo MST si se especificó
+:: Descargar archivo MST si se especific�
 if defined mst_url (
     echo Descargando MST desde: !mst_url!
     powershell -NoProfile -Command "(New-Object System.Net.WebClient).DownloadFile('!mst_url!', '!mst_file!')"
@@ -2827,7 +3189,7 @@ if defined mst_url (
         set "mst_file="
     ) else if not exist "!mst_file!" (
         echo.
-        echo [ADVERTENCIA] El archivo MST no se descargó correctamente.
+        echo [ADVERTENCIA] El archivo MST no se descarg� correctamente.
         echo Continuando sin archivo MST...
         set "mst_file="
     ) else (
@@ -2837,22 +3199,22 @@ if defined mst_url (
 
 echo.
 echo --------------------------------------------------
-echo Iniciando instalación del agente ManageEngine...
+echo Iniciando instalaci�n del agente ManageEngine...
 echo --------------------------------------------------
 
-:: Instalar según el tipo de archivo
+:: Instalar seg�n el tipo de archivo
 if "!file_type!"=="EXE" (
-    :: Instalación EXE silenciosa
-    echo Ejecutando instalación EXE silenciosa...
+    :: Instalaci�n EXE silenciosa
+    echo Ejecutando instalaci�n EXE silenciosa...
     "!agent_file!" /S
     set "exit_code=!errorlevel!"
 ) else (
-    :: Instalación MSI con PowerShell script
-    echo Ejecutando instalación MSI con script PowerShell...
+    :: Instalaci�n MSI con PowerShell script
+    echo Ejecutando instalaci�n MSI con script PowerShell...
     
     :: Crear script de PowerShell temporal
     set "ps_script=%temp%\install_manageengine.ps1"
-    echo # Script de instalación de Desktop Central Agent en PowerShell > "!ps_script!"
+    echo # Script de instalaci�n de Desktop Central Agent en PowerShell > "!ps_script!"
     echo. >> "!ps_script!"
     echo param ( >> "!ps_script!"
     echo     [string]$msiPath, >> "!ps_script!"
@@ -2865,7 +3227,7 @@ if "!file_type!"=="EXE" (
     echo # Detectar arquitectura del SO >> "!ps_script!"
     echo $checkOSArch = ^(Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment"^).PROCESSOR_ARCHITECTURE >> "!ps_script!"
     echo. >> "!ps_script!"
-    echo # Determinar clave de registro según arquitectura >> "!ps_script!"
+    echo # Determinar clave de registro seg�n arquitectura >> "!ps_script!"
     echo if ^($checkOSArch -eq "x86"^) { >> "!ps_script!"
     echo     $regkey = "HKLM:\SOFTWARE\AdventNet\DesktopCentral\DCAgent" >> "!ps_script!"
     echo } else { >> "!ps_script!"
@@ -2910,18 +3272,18 @@ if exist "!mst_file!" del "!mst_file!"
 
 if !exit_code! equ 0 (
     echo.
-    echo [ÉXITO] Agente ManageEngine Desktop Central instalado correctamente.
+    echo [�XITO] Agente ManageEngine Desktop Central instalado correctamente.
     echo.
     if "!file_type!"=="MSI" (
-        echo Log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+        echo Log de instalaci�n: %SYSTEMDRIVE%\dcagentInstaller.log
     )
     echo Archivos temporales limpiados.
 ) else (
     echo.
-    echo [ERROR] No se pudo instalar el agente. Código de error: !exit_code!
+    echo [ERROR] No se pudo instalar el agente. C�digo de error: !exit_code!
     echo.
     if "!file_type!"=="MSI" (
-        echo Revise el log de instalación: %SYSTEMDRIVE%\dcagentInstaller.log
+        echo Revise el log de instalaci�n: %SYSTEMDRIVE%\dcagentInstaller.log
     )
     set /a error_count+=1
 )
@@ -2931,7 +3293,7 @@ goto end_manageengine
 
 :cancel_manageengine
 echo.
-echo Instalación cancelada.
+echo Instalaci�n cancelada.
 :: Limpiar archivos si existen
 if exist "!agent_file!" del "!agent_file!"
 if exist "!mst_file!" del "!mst_file!"
