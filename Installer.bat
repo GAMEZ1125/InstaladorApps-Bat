@@ -1646,24 +1646,35 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo $resultList.Location = New-Object System.Drawing.Point^(15,45^)
 >>"!_psfile!" echo $resultList.Size = New-Object System.Drawing.Size^(660,370^)
 >>"!_psfile!" echo $resultList.SelectionMode = "MultiExtended"
+>>"!_psfile!" echo $global:installQueue = @^()
+>>"!_psfile!" echo $addBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $addBtn.Text = "+ Añadir a cola"
+>>"!_psfile!" echo $addBtn.Location = New-Object System.Drawing.Point^(100,430^)
+>>"!_psfile!" echo $addBtn.Size = New-Object System.Drawing.Size^(140,30^)
+>>"!_psfile!" echo $addBtn.Enabled = $false
 >>"!_psfile!" echo $installBtn = New-Object System.Windows.Forms.Button
->>"!_psfile!" echo $installBtn.Text = "Instalar seleccionado"
->>"!_psfile!" echo $installBtn.Location = New-Object System.Drawing.Point^(200,430^)
->>"!_psfile!" echo $installBtn.Size = New-Object System.Drawing.Size^(140,30^)
+>>"!_psfile!" echo $installBtn.Text = "Instalar cola (0)"
+>>"!_psfile!" echo $installBtn.Location = New-Object System.Drawing.Point^(250,430^)
+>>"!_psfile!" echo $installBtn.Size = New-Object System.Drawing.Size^(150,30^)
 >>"!_psfile!" echo $installBtn.Enabled = $false
+>>"!_psfile!" echo $clearBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $clearBtn.Text = "Vaciar cola"
+>>"!_psfile!" echo $clearBtn.Location = New-Object System.Drawing.Point^(410,430^)
+>>"!_psfile!" echo $clearBtn.Size = New-Object System.Drawing.Size^(100,30^)
+>>"!_psfile!" echo $clearBtn.Enabled = $false
 >>"!_psfile!" echo $closeBtn = New-Object System.Windows.Forms.Button
 >>"!_psfile!" echo $closeBtn.Text = "Cerrar"
->>"!_psfile!" echo $closeBtn.Location = New-Object System.Drawing.Point^(360,430^)
+>>"!_psfile!" echo $closeBtn.Location = New-Object System.Drawing.Point^(520,430^)
 >>"!_psfile!" echo $closeBtn.Size = New-Object System.Drawing.Size^(80,30^)
 >>"!_psfile!" echo $statusLabel = New-Object System.Windows.Forms.Label
->>"!_psfile!" echo $statusLabel.Text = "Listo"
+>>"!_psfile!" echo $statusLabel.Text = "Listo. Busque y agregue aplicaciones a la cola."
 >>"!_psfile!" echo $statusLabel.Location = New-Object System.Drawing.Point^(15,470^)
 >>"!_psfile!" echo $statusLabel.Size = New-Object System.Drawing.Size^(660,20^)
 >>"!_psfile!" echo $searchBtn.Add_Click^({
 >>"!_psfile!" echo     $searchBtn.Enabled = $false
 >>"!_psfile!" echo     $statusLabel.Text = "Buscando..."
 >>"!_psfile!" echo     $resultList.Items.Clear^(^)
->>"!_psfile!" echo     $installBtn.Enabled = $false
+>>"!_psfile!" echo     $addBtn.Enabled = $false
 >>"!_psfile!" echo     $term = $searchBox.Text.Trim^(^)
 >>"!_psfile!" echo     if ^(-not $term^) {
 >>"!_psfile!" echo         $statusLabel.Text = "Ingrese un termino de busqueda"
@@ -1681,44 +1692,32 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo                 [void]$resultList.Items.Add^($line^)
 >>"!_psfile!" echo             }
 >>"!_psfile!" echo         }
->>"!_psfile!" echo         $statusLabel.Text = "Encontrados: " + $resultList.Items.Count + " resultados"
+>>"!_psfile!" echo         $statusLabel.Text = "Encontrados: " + $resultList.Items.Count + " resultados. Seleccione y añada a la cola."
 >>"!_psfile!" echo     } catch {
 >>"!_psfile!" echo         $statusLabel.Text = "Error: " + $_.Exception.Message
 >>"!_psfile!" echo     }
 >>"!_psfile!" echo     $searchBtn.Enabled = $true
 >>"!_psfile!" echo })
 >>"!_psfile!" echo $resultList.Add_SelectedIndexChanged^({
->>"!_psfile!" echo     $installBtn.Enabled = $resultList.SelectedItems.Count -gt 0
+>>"!_psfile!" echo     $addBtn.Enabled = $resultList.SelectedItems.Count -gt 0
 >>"!_psfile!" echo })
->>"!_psfile!" echo $installBtn.Add_Click^({
+>>"!_psfile!" echo $addBtn.Add_Click^({
 >>"!_psfile!" echo     if ^($resultList.SelectedItems.Count -eq 0^) { return }
 >>"!_psfile!" echo     $selectedItems = @^($resultList.SelectedItems^)
->>"!_psfile!" echo     $validItems = @^()
 >>"!_psfile!" echo     $headerLine = ""
 >>"!_psfile!" echo     foreach ^($item in $resultList.Items^) {
 >>"!_psfile!" echo         if ^($item -match "^(Nombre|Name)\s"^) { $headerLine = $item; break }
 >>"!_psfile!" echo     }
+>>"!_psfile!" echo     $addedCount = 0
 >>"!_psfile!" echo     foreach ^($item in $selectedItems^) {
 >>"!_psfile!" echo         $line = $item.Trim^(^)
 >>"!_psfile!" echo         if ^($line -match "^(Nombre|---|Chocolatey v|Name|Failed|Error|The |No se|\d+ package)"^) { continue }
 >>"!_psfile!" echo         if ^($line -match "^\s*$"^) { continue }
->>"!_psfile!" echo         $validItems += $line
->>"!_psfile!" echo     }
->>"!_psfile!" echo     if ^($validItems.Count -eq 0^) {
->>"!_psfile!" echo         [System.Windows.Forms.MessageBox]::Show^("Seleccione al menos una aplicacion valida de la lista.","Aviso","OK","Warning"^)
->>"!_psfile!" echo         return
->>"!_psfile!" echo     }
->>"!_psfile!" echo     $confirm = [System.Windows.Forms.MessageBox]::Show^("Instalar " + $validItems.Count + " aplicacion/es seleccionada/s?","Confirmar Instalacion","YesNo","Question"^)
->>"!_psfile!" echo     if ^($confirm -ne "Yes"^) { return }
->>"!_psfile!" echo     $installBtn.Enabled = $false
->>"!_psfile!" echo     $searchBtn.Enabled = $false
->>"!_psfile!" echo     $closeBtn.Enabled = $false
->>"!_psfile!" echo     $successCount = 0
->>"!_psfile!" echo     $errorList = @^()
->>"!_psfile!" echo     foreach ^($line in $validItems^) {
->>"!_psfile!" echo         if ^($srcCombo.SelectedItem -eq "WinGet"^) {
->>"!_psfile!" echo             $pkgName = ""
->>"!_psfile!" echo             $pkgId = ""
+>>"!_psfile!" echo         $src = $srcCombo.SelectedItem
+>>"!_psfile!" echo         $pkgName = ""
+>>"!_psfile!" echo         $pkgId = ""
+>>"!_psfile!" echo         $pkgVer = ""
+>>"!_psfile!" echo         if ^($src -eq "WinGet"^) {
 >>"!_psfile!" echo             if ^($headerLine^) {
 >>"!_psfile!" echo                 $idxId = $headerLine.IndexOf^(" Id"^)
 >>"!_psfile!" echo                 $idxVer = -1
@@ -1747,10 +1746,50 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo             $pkgName = "$pkgId"
 >>"!_psfile!" echo             if ^($pkgVer -and $pkgVer -notmatch '\['^) { $pkgName += " v$pkgVer" }
 >>"!_psfile!" echo         }
->>"!_psfile!" echo         $statusLabel.Text = "Instalando " + $pkgName + "..."
+>>"!_psfile!" echo         $exists = $false
+>>"!_psfile!" echo         foreach ^($existing in $global:installQueue^) {
+>>"!_psfile!" echo             if ^($existing.Id -eq $pkgId -and $existing.Source -eq $src^) { $exists = $true; break }
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo         if ^(-not $exists^) {
+>>"!_psfile!" echo             $itemObj = New-Object PSObject -Property @{ Source = $src; Name = $pkgName; Id = $pkgId; Version = $pkgVer; Line = $line }
+>>"!_psfile!" echo             $global:installQueue += $itemObj
+>>"!_psfile!" echo             $addedCount++
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     if ^($addedCount -gt 0^) {
+>>"!_psfile!" echo         $installBtn.Text = "Instalar cola (" + $global:installQueue.Count + ")"
+>>"!_psfile!" echo         $installBtn.Enabled = $true
+>>"!_psfile!" echo         $clearBtn.Enabled = $true
+>>"!_psfile!" echo         $statusLabel.Text = "Se agregaron " + $addedCount + " aplicacion/es. Total en cola: " + $global:installQueue.Count
+>>"!_psfile!" echo     } else {
+>>"!_psfile!" echo         $statusLabel.Text = "Aplicacion/es ya en cola o invalida/s."
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $resultList.ClearSelected^(^)
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $installBtn.Add_Click^({
+>>"!_psfile!" echo     if ^($global:installQueue.Count -eq 0^) { return }
+>>"!_psfile!" echo     $listStr = ""
+>>"!_psfile!" echo     foreach ^($q in $global:installQueue^) {
+>>"!_psfile!" echo         $listStr += "[" + $q.Source + "] " + $q.Name + "`n"
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $confirm = [System.Windows.Forms.MessageBox]::Show^("¿Desea instalar las siguientes " + $global:installQueue.Count + " aplicacion/es de la cola?`n`n" + $listStr,"Confirmar Instalacion","YesNo","Question"^)
+>>"!_psfile!" echo     if ^($confirm -ne "Yes"^) { return }
+>>"!_psfile!" echo     $addBtn.Enabled = $false
+>>"!_psfile!" echo     $installBtn.Enabled = $false
+>>"!_psfile!" echo     $clearBtn.Enabled = $false
+>>"!_psfile!" echo     $searchBtn.Enabled = $false
+>>"!_psfile!" echo     $closeBtn.Enabled = $false
+>>"!_psfile!" echo     $successCount = 0
+>>"!_psfile!" echo     $errorList = @^()
+>>"!_psfile!" echo     foreach ^($q in $global:installQueue^) {
+>>"!_psfile!" echo         $src = $q.Source
+>>"!_psfile!" echo         $pkgName = $q.Name
+>>"!_psfile!" echo         $pkgId = $q.Id
+>>"!_psfile!" echo         $pkgVer = $q.Version
+>>"!_psfile!" echo         $statusLabel.Text = "Instalando [" + $src + "] " + $pkgName + "..."
 >>"!_psfile!" echo         [System.Windows.Forms.Application]::DoEvents^(^)
 >>"!_psfile!" echo         try {
->>"!_psfile!" echo             if ^($srcCombo.SelectedItem -eq "WinGet"^) {
+>>"!_psfile!" echo             if ^($src -eq "WinGet"^) {
 >>"!_psfile!" echo                 $output = winget install --id "$pkgId" --exact --silent --accept-package-agreements --accept-source-agreements 2^>^&1 ^| Out-String
 >>"!_psfile!" echo                 if ^($LASTEXITCODE -ne 0^) {
 >>"!_psfile!" echo                     $output2 = winget install --id "$pkgId" --silent --accept-package-agreements --accept-source-agreements 2^>^&1 ^| Out-String
@@ -1771,13 +1810,16 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo             } else {
 >>"!_psfile!" echo                 $shortOut = $output.Trim^(^)
 >>"!_psfile!" echo                 if ^($shortOut.Length -gt 300^) { $shortOut = $shortOut.Substring^(0,300^) + "..." }
->>"!_psfile!" echo                 $errorList += "$pkgName [Codigo: $LASTEXITCODE]:`n$shortOut"
+>>"!_psfile!" echo                 $errorList += $pkgName + " [Codigo: " + $LASTEXITCODE + "]:`n" + $shortOut
 >>"!_psfile!" echo             }
 >>"!_psfile!" echo         } catch {
 >>"!_psfile!" echo             $errorList += $pkgName + ": " + $_
 >>"!_psfile!" echo         }
 >>"!_psfile!" echo     }
->>"!_psfile!" echo     $installBtn.Enabled = $true
+>>"!_psfile!" echo     $global:installQueue = @^()
+>>"!_psfile!" echo     $installBtn.Text = "Instalar cola (0)"
+>>"!_psfile!" echo     $installBtn.Enabled = $false
+>>"!_psfile!" echo     $clearBtn.Enabled = $false
 >>"!_psfile!" echo     $searchBtn.Enabled = $true
 >>"!_psfile!" echo     $closeBtn.Enabled = $true
 >>"!_psfile!" echo     if ^($errorList.Count -eq 0^) {
@@ -1789,6 +1831,13 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo         $statusLabel.Text = "Instalacion finalizada con " + $errorList.Count + " error/es."
 >>"!_psfile!" echo     }
 >>"!_psfile!" echo })
+>>"!_psfile!" echo $clearBtn.Add_Click^({
+>>"!_psfile!" echo     $global:installQueue = @^()
+>>"!_psfile!" echo     $installBtn.Text = "Instalar cola (0)"
+>>"!_psfile!" echo     $installBtn.Enabled = $false
+>>"!_psfile!" echo     $clearBtn.Enabled = $false
+>>"!_psfile!" echo     $statusLabel.Text = "Cola de instalacion vaciada."
+>>"!_psfile!" echo })
 >>"!_psfile!" echo $closeBtn.Add_Click^({ $form.Close^(^) })
 >>"!_psfile!" echo $searchBox.Add_KeyDown^({
 >>"!_psfile!" echo     if ^($_.KeyCode -eq "Enter"^) { $searchBtn.PerformClick^(^) }
@@ -1798,7 +1847,9 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo $form.Controls.Add^($searchBox^)
 >>"!_psfile!" echo $form.Controls.Add^($searchBtn^)
 >>"!_psfile!" echo $form.Controls.Add^($resultList^)
+>>"!_psfile!" echo $form.Controls.Add^($addBtn^)
 >>"!_psfile!" echo $form.Controls.Add^($installBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($clearBtn^)
 >>"!_psfile!" echo $form.Controls.Add^($closeBtn^)
 >>"!_psfile!" echo $form.Controls.Add^($statusLabel^)
 >>"!_psfile!" echo $form.ShowDialog^(^)
