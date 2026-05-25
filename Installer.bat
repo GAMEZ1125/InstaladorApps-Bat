@@ -335,16 +335,7 @@ for %%a in (%applications%) do (
     ) else if "%%a"=="npm_appium" (
         call :install_npm_appium
     ) else if "%%a"=="Gestion_Hosts" (
-        echo Descargando herramienta de gestion de hosts...
-        curl -o "%temp%\configuraciones.bat" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/configuraciones.bat" 2>nul
-        if exist "%temp%\configuraciones.bat" (
-            echo Ejecutando gestion de hosts...
-            call "%temp%\configuraciones.bat"
-            if exist "%temp%\configuraciones.bat" del "%temp%\configuraciones.bat"
-        ) else (
-            echo ERROR: No se pudo descargar la herramienta de configuracion
-            set /a error_count+=1
-        )
+        call :gestion_hosts
     ) else if "%%a"=="Gestion_Certificados" (
         echo Descargando herramienta de gestion de certificados...
         curl -o "%temp%\certificados.bat" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/certificados.bat" 2>nul
@@ -1611,6 +1602,67 @@ goto end_pm
 :end_pm
 endlocal & goto :eof
 
+:: ======== MODULO DE GESTION DE HOSTS ========
+:gestion_hosts
+setlocal EnableDelayedExpansion
+cls
+echo ==================================================
+echo        GESTION DE ARCHIVO HOSTS DE WINDOWS
+echo ==================================================
+echo.
+echo Esta herramienta permite gestionar el archivo hosts
+echo de Windows para agregar, editar o eliminar entradas.
+echo.
+echo [1] Modo texto (herramienta clasica)
+echo [2] Interfaz grafica (PowerShell GUI)
+echo [3] Cancelar
+echo.
+set /p "gh_choice=Seleccione una opcion (1/2/3): "
+
+set "gh_choice=!gh_choice: =!"
+if "!gh_choice!"=="1" goto use_gh_text
+if "!gh_choice!"=="2" goto use_gh_gui
+if "!gh_choice!"=="3" goto end_gh
+
+echo.
+echo Opcion invalida.
+pause
+goto gestion_hosts
+
+:use_gh_text
+cls
+echo ==================================================
+echo    MODO TEXTO - GESTION DE HOSTS
+echo ==================================================
+echo.
+echo Descargando herramienta de gestion de hosts...
+curl -o "%temp%\configuraciones.bat" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/configuraciones.bat" 2>nul
+if exist "%temp%\configuraciones.bat" (
+    echo Ejecutando gestion de hosts...
+    call "%temp%\configuraciones.bat"
+    if exist "%temp%\configuraciones.bat" del "%temp%\configuraciones.bat"
+) else (
+    echo ERROR: No se pudo descargar la herramienta de configuracion
+)
+pause
+goto end_gh
+
+:use_gh_gui
+cls
+echo ==================================================
+echo    INTERFAZ GRAFICA - GESTION DE HOSTS
+echo ==================================================
+echo.
+echo Abriendo ventana grafica de PowerShell...
+echo.
+call :gestion_hosts_gui
+echo.
+pause
+goto end_gh
+
+:end_gh
+endlocal & goto :eof
+
 :: ======== INTERFAZ GRAFICA PARA APP 85 (WINGET/CHOCO) ========
 :install_with_pm_gui
 setlocal enabledelayedexpansion
@@ -1851,6 +1903,223 @@ if exist "!_psfile!" del "!_psfile!" 2>nul
 >>"!_psfile!" echo $form.Controls.Add^($installBtn^)
 >>"!_psfile!" echo $form.Controls.Add^($clearBtn^)
 >>"!_psfile!" echo $form.Controls.Add^($closeBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($statusLabel^)
+>>"!_psfile!" echo $form.ShowDialog^(^)
+
+powershell -ExecutionPolicy Bypass -File "!_psfile!"
+del "!_psfile!" 2>nul
+endlocal
+goto :eof
+
+:: ======== INTERFAZ GRAFICA PARA APP 64 (GESTION HOSTS) ========
+:gestion_hosts_gui
+setlocal enabledelayedexpansion
+set "_psfile=%temp%\_gestion_hosts.ps1"
+if exist "!_psfile!" del "!_psfile!" 2>nul
+
+>>"!_psfile!" echo Add-Type -AssemblyName System.Windows.Forms
+>>"!_psfile!" echo Add-Type -AssemblyName System.Drawing
+>>"!_psfile!" echo $hostsFile = "$env:WINDIR\System32\Drivers\Etc\hosts"
+>>"!_psfile!" echo $form = New-Object System.Windows.Forms.Form
+>>"!_psfile!" echo $form.Text = "Gestion de Archivo Hosts - PowerShell GUI"
+>>"!_psfile!" echo $form.Size = New-Object System.Drawing.Size^(750,530^)
+>>"!_psfile!" echo $form.StartPosition = "CenterScreen"
+>>"!_psfile!" echo $form.Font = New-Object System.Drawing.Font^("Consolas",9^)
+>>"!_psfile!" echo $form.MinimizeBox = $true
+>>"!_psfile!" echo $form.MaximizeBox = $false
+>>"!_psfile!" echo $form.FormBorderStyle = "FixedDialog"
+>>"!_psfile!" echo $hostsBox = New-Object System.Windows.Forms.TextBox
+>>"!_psfile!" echo $hostsBox.Location = New-Object System.Drawing.Point^(15,15^)
+>>"!_psfile!" echo $hostsBox.Size = New-Object System.Drawing.Size^(720,155^)
+>>"!_psfile!" echo $hostsBox.Multiline = $true
+>>"!_psfile!" echo $hostsBox.ReadOnly = $true
+>>"!_psfile!" echo $hostsBox.ScrollBars = "Both"
+>>"!_psfile!" echo $hostsBox.WordWrap = $false
+>>"!_psfile!" echo $hostsBox.Font = New-Object System.Drawing.Font^("Consolas",9^)
+>>"!_psfile!" echo $entriesList = New-Object System.Windows.Forms.ListBox
+>>"!_psfile!" echo $entriesList.Location = New-Object System.Drawing.Point^(15,180^)
+>>"!_psfile!" echo $entriesList.Size = New-Object System.Drawing.Size^(720,145^)
+>>"!_psfile!" echo $entriesList.SelectionMode = "One"
+>>"!_psfile!" echo $entriesList.Font = New-Object System.Drawing.Font^("Consolas",9^)
+>>"!_psfile!" echo $ipLabel = New-Object System.Windows.Forms.Label
+>>"!_psfile!" echo $ipLabel.Text = "IP:"
+>>"!_psfile!" echo $ipLabel.Location = New-Object System.Drawing.Point^(15,340^)
+>>"!_psfile!" echo $ipLabel.Size = New-Object System.Drawing.Size^(30,25^)
+>>"!_psfile!" echo $ipBox = New-Object System.Windows.Forms.TextBox
+>>"!_psfile!" echo $ipBox.Location = New-Object System.Drawing.Point^(45,338^)
+>>"!_psfile!" echo $ipBox.Size = New-Object System.Drawing.Size^(160,25^)
+>>"!_psfile!" echo $domainLabel = New-Object System.Windows.Forms.Label
+>>"!_psfile!" echo $domainLabel.Text = "Dominio:"
+>>"!_psfile!" echo $domainLabel.Location = New-Object System.Drawing.Point^(215,340^)
+>>"!_psfile!" echo $domainLabel.Size = New-Object System.Drawing.Size^(60,25^)
+>>"!_psfile!" echo $domainBox = New-Object System.Windows.Forms.TextBox
+>>"!_psfile!" echo $domainBox.Location = New-Object System.Drawing.Point^(275,338^)
+>>"!_psfile!" echo $domainBox.Size = New-Object System.Drawing.Size^(460,25^)
+>>"!_psfile!" echo $global:editMode = $false
+>>"!_psfile!" echo $global:editOriginal = ""
+>>"!_psfile!" echo $addBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $addBtn.Text = "Agregar entrada"
+>>"!_psfile!" echo $addBtn.Location = New-Object System.Drawing.Point^(15,375^)
+>>"!_psfile!" echo $addBtn.Size = New-Object System.Drawing.Size^(140,30^)
+>>"!_psfile!" echo $editBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $editBtn.Text = "Editar seleccion"
+>>"!_psfile!" echo $editBtn.Location = New-Object System.Drawing.Point^(165,375^)
+>>"!_psfile!" echo $editBtn.Size = New-Object System.Drawing.Size^(130,30^)
+>>"!_psfile!" echo $deleteBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $deleteBtn.Text = "Eliminar seleccion"
+>>"!_psfile!" echo $deleteBtn.Location = New-Object System.Drawing.Point^(305,375^)
+>>"!_psfile!" echo $deleteBtn.Size = New-Object System.Drawing.Size^(130,30^)
+>>"!_psfile!" echo $refreshBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $refreshBtn.Text = "Refrescar"
+>>"!_psfile!" echo $refreshBtn.Location = New-Object System.Drawing.Point^(445,375^)
+>>"!_psfile!" echo $refreshBtn.Size = New-Object System.Drawing.Size^(100,30^)
+>>"!_psfile!" echo $closeBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $closeBtn.Text = "Cerrar"
+>>"!_psfile!" echo $closeBtn.Location = New-Object System.Drawing.Point^(555,375^)
+>>"!_psfile!" echo $closeBtn.Size = New-Object System.Drawing.Size^(80,30^)
+>>"!_psfile!" echo $undoBtn = New-Object System.Windows.Forms.Button
+>>"!_psfile!" echo $undoBtn.Text = "Cancelar edicion"
+>>"!_psfile!" echo $undoBtn.Location = New-Object System.Drawing.Point^(645,375^)
+>>"!_psfile!" echo $undoBtn.Size = New-Object System.Drawing.Size^(90,30^)
+>>"!_psfile!" echo $undoBtn.Visible = $false
+>>"!_psfile!" echo $statusLabel = New-Object System.Windows.Forms.Label
+>>"!_psfile!" echo $statusLabel.Text = "Listo. Seleccione una entrada de la lista para editar/eliminar."
+>>"!_psfile!" echo $statusLabel.Location = New-Object System.Drawing.Point^(15,415^)
+>>"!_psfile!" echo $statusLabel.Size = New-Object System.Drawing.Size^(720,20^)
+>>"!_psfile!" echo function RefreshHosts ^{
+>>"!_psfile!" echo     $global:editMode = $false
+>>"!_psfile!" echo     $global:editOriginal = ""
+>>"!_psfile!" echo     $addBtn.Text = "Agregar entrada"
+>>"!_psfile!" echo     $undoBtn.Visible = $false
+>>"!_psfile!" echo     $hostsBox.Clear^(^)
+>>"!_psfile!" echo     $entriesList.Items.Clear^(^)
+>>"!_psfile!" echo     if ^(-not ^(Test-Path $hostsFile^)^) {
+>>"!_psfile!" echo         $statusLabel.Text = "Error: Archivo hosts no encontrado."
+>>"!_psfile!" echo         return
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $content = Get-Content $hostsFile
+>>"!_psfile!" echo     $hostsBox.Text = $content -join "`r`n"
+>>"!_psfile!" echo     $idx = 0
+>>"!_psfile!" echo     foreach ^($line in $content^) {
+>>"!_psfile!" echo         $trimmed = $line.Trim^(^)
+>>"!_psfile!" echo         if ^($trimmed -and $trimmed[0] -ne '#'^) {
+>>"!_psfile!" echo             $parts = $trimmed -split '\s+', 2
+>>"!_psfile!" echo             if ^($parts.Count -ge 2 -and $parts[0] -match '^\d+\.\d+\.\d+\.\d+'^) {
+>>"!_psfile!" echo                 $idx++
+>>"!_psfile!" echo                 [void]$entriesList.Items.Add^("$idx. $trimmed"^)
+>>"!_psfile!" echo             }
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $statusLabel.Text = "Refrescado. $idx entradas editables encontradas."
+>>"!_psfile!" echo }
+>>"!_psfile!" echo RefreshHosts
+>>"!_psfile!" echo $addBtn.Add_Click^({
+>>"!_psfile!" echo     $ip = $ipBox.Text.Trim^(^)
+>>"!_psfile!" echo     $domain = $domainBox.Text.Trim^(^)
+>>"!_psfile!" echo     if ^(-not $ip -or -not $domain^) {
+>>"!_psfile!" echo         $statusLabel.Text = "Error: Debe ingresar IP y dominio."
+>>"!_psfile!" echo         return
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $newLine = "$ip $domain"
+>>"!_psfile!" echo     try ^{
+>>"!_psfile!" echo         if ^($global:editMode -and $global:editOriginal^) {
+>>"!_psfile!" echo             $content = Get-Content $hostsFile
+>>"!_psfile!" echo             $updated = New-Object System.Collections.ArrayList
+>>"!_psfile!" echo             $found = $false
+>>"!_psfile!" echo             foreach ^($l in $content^) {
+>>"!_psfile!" echo                 if ^($l.Trim^(^) -eq $global:editOriginal.Trim^(^) -and -not $found^) {
+>>"!_psfile!" echo                     [void]$updated.Add^($newLine^)
+>>"!_psfile!" echo                     $found = $true
+>>"!_psfile!" echo                 } else ^{
+>>"!_psfile!" echo                     [void]$updated.Add^($l^)
+>>"!_psfile!" echo                 }
+>>"!_psfile!" echo             }
+>>"!_psfile!" echo             if ^(-not $found^) { [void]$updated.Add^($newLine^) }
+>>"!_psfile!" echo             $updated ^| Set-Content $hostsFile -Encoding ASCII
+>>"!_psfile!" echo             $global:editMode = $false
+>>"!_psfile!" echo             $global:editOriginal = ""
+>>"!_psfile!" echo             $addBtn.Text = "Agregar entrada"
+>>"!_psfile!" echo             $undoBtn.Visible = $false
+>>"!_psfile!" echo             $statusLabel.Text = "Entrada actualizada: $newLine"
+>>"!_psfile!" echo         } else ^{
+>>"!_psfile!" echo             Add-Content $hostsFile $newLine -Encoding ASCII
+>>"!_psfile!" echo             $statusLabel.Text = "Entrada agregada: $newLine"
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo         $ipBox.Clear^(^)
+>>"!_psfile!" echo         $domainBox.Clear^(^)
+>>"!_psfile!" echo         RefreshHosts
+>>"!_psfile!" echo     } catch ^{
+>>"!_psfile!" echo         $statusLabel.Text = "Error: " + $_.Exception.Message
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $editBtn.Add_Click^({
+>>"!_psfile!" echo     if ^($entriesList.SelectedIndex -lt 0^) {
+>>"!_psfile!" echo         $statusLabel.Text = "Seleccione una entrada de la lista."
+>>"!_psfile!" echo         return
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $selected = $entriesList.SelectedItem
+>>"!_psfile!" echo     $line = $selected -replace '^\d+\.\s*', ''
+>>"!_psfile!" echo     $parts = $line -split '\s+', 2
+>>"!_psfile!" echo     if ^($parts.Count -ge 2^) {
+>>"!_psfile!" echo         $ipBox.Text = $parts[0]
+>>"!_psfile!" echo         $domainBox.Text = $parts[1]
+>>"!_psfile!" echo         $global:editMode = $true
+>>"!_psfile!" echo         $global:editOriginal = $line
+>>"!_psfile!" echo         $addBtn.Text = "Actualizar entrada"
+>>"!_psfile!" echo         $undoBtn.Visible = $true
+>>"!_psfile!" echo         $statusLabel.Text = "Editando: $line. Modifique y presione 'Actualizar entrada'."
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $deleteBtn.Add_Click^({
+>>"!_psfile!" echo     if ^($entriesList.SelectedIndex -lt 0^) {
+>>"!_psfile!" echo         $statusLabel.Text = "Seleccione una entrada de la lista."
+>>"!_psfile!" echo         return
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo     $selected = $entriesList.SelectedItem
+>>"!_psfile!" echo     $line = $selected -replace '^\d+\.\s*', ''
+>>"!_psfile!" echo     if ^($line^) {
+>>"!_psfile!" echo         $confirm = [System.Windows.Forms.MessageBox]::Show^("Desea eliminar la entrada:`n$line", "Confirmar eliminacion", "YesNo", "Question"^)
+>>"!_psfile!" echo         if ^($confirm -eq "Yes"^) {
+>>"!_psfile!" echo             try ^{
+>>"!_psfile!" echo                 $content = Get-Content $hostsFile
+>>"!_psfile!" echo                 $updated = $content ^| Where-Object { $_.Trim^(^) -ne $line }
+>>"!_psfile!" echo                 $updated ^| Set-Content $hostsFile -Encoding ASCII
+>>"!_psfile!" echo                 $ipBox.Clear^(^)
+>>"!_psfile!" echo                 $domainBox.Clear^(^)
+>>"!_psfile!" echo                 RefreshHosts
+>>"!_psfile!" echo                 $statusLabel.Text = "Entrada eliminada: $line"
+>>"!_psfile!" echo             } catch ^{
+>>"!_psfile!" echo                 $statusLabel.Text = "Error: " + $_.Exception.Message
+>>"!_psfile!" echo             }
+>>"!_psfile!" echo         }
+>>"!_psfile!" echo     }
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $refreshBtn.Add_Click^({ RefreshHosts })
+>>"!_psfile!" echo $closeBtn.Add_Click^({ $form.Close^(^) })
+>>"!_psfile!" echo $undoBtn.Add_Click^({
+>>"!_psfile!" echo     $ipBox.Clear^(^)
+>>"!_psfile!" echo     $domainBox.Clear^(^)
+>>"!_psfile!" echo     $global:editMode = $false
+>>"!_psfile!" echo     $global:editOriginal = ""
+>>"!_psfile!" echo     $addBtn.Text = "Agregar entrada"
+>>"!_psfile!" echo     $undoBtn.Visible = $false
+>>"!_psfile!" echo     $statusLabel.Text = "Edicion cancelada."
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $domainBox.Add_KeyDown^({
+>>"!_psfile!" echo     if ^($_.KeyCode -eq "Enter"^) { $addBtn.PerformClick^(^) }
+>>"!_psfile!" echo })
+>>"!_psfile!" echo $form.Controls.Add^($hostsBox^)
+>>"!_psfile!" echo $form.Controls.Add^($entriesList^)
+>>"!_psfile!" echo $form.Controls.Add^($ipLabel^)
+>>"!_psfile!" echo $form.Controls.Add^($ipBox^)
+>>"!_psfile!" echo $form.Controls.Add^($domainLabel^)
+>>"!_psfile!" echo $form.Controls.Add^($domainBox^)
+>>"!_psfile!" echo $form.Controls.Add^($addBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($editBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($deleteBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($refreshBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($closeBtn^)
+>>"!_psfile!" echo $form.Controls.Add^($undoBtn^)
 >>"!_psfile!" echo $form.Controls.Add^($statusLabel^)
 >>"!_psfile!" echo $form.ShowDialog^(^)
 
@@ -2632,16 +2901,7 @@ for %%a in (!applications!) do (
     ) else if "%%a"=="npm_appium" (
         call :install_npm_appium
     ) else if "%%a"=="Gestion_Hosts" (
-        echo Descargando herramienta de gestion de hosts...
-        curl -o "%temp%\configuraciones.bat" "https://raw.githubusercontent.com/GAMEZ1125/InstaladorApps-Bat/main/configuraciones.bat" 2>nul
-        if exist "%temp%\configuraciones.bat" (
-            echo Ejecutando gestion de hosts...
-            call "%temp%\configuraciones.bat"
-            if exist "%temp%\configuraciones.bat" del "%temp%\configuraciones.bat"
-        ) else (
-            echo ERROR: No se pudo descargar la herramienta de configuracion
-            set /a error_count+=1
-        )
+        call :gestion_hosts
     ) else if "%%a"=="apache-jmeter-5.6.3.zip" (
         call :install_zip "https://dlcdn.apache.org//jmeter/binaries/apache-jmeter-5.6.3.zip" "C:\Program Files\apache-jmeter-5.6.3"
     ) else if "%%a"=="mysql-connector-odbc-9.4.0-winx64.msi" (
