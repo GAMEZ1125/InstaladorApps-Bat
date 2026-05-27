@@ -2208,6 +2208,11 @@ shift
 set "install_args=%*"
 set "winget_log=%temp%\winget_install_%random%%random%.log"
 
+:: Guardar code page y cambiar a UTF-8 para caracteres Unicode
+for /f "tokens=2 delims=:" %%p in ('chcp') do set "_oldcp=%%p"
+set "_oldcp=!_oldcp: =!"
+chcp 65001 >nul 2>&1
+
 set "install_cmd="
 where winget >nul 2>&1
 if !errorlevel! equ 0 ( set "install_cmd=winget"
@@ -2224,24 +2229,28 @@ if not defined install_cmd (
     goto :winget_install_end
 )
 
-"!install_cmd!" install --id "!package_id!" !install_args! --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
+:: Sin redireccion para que winget muestre la barra de progreso
+"!install_cmd!" install --id "!package_id!" !install_args! --accept-package-agreements --accept-source-agreements
 set "install_exit=!errorlevel!"
-type "!winget_log!"
+chcp !_oldcp! >nul 2>&1
 
 if !install_exit! neq 0 (
+    :: En caso de error, capturar log para analisis
+    "!install_cmd!" install --id "!package_id!" !install_args! --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
+    set "install_exit=!errorlevel!"
     findstr /C:"Please specify one of them using the --source option to proceed." /C:"Failed when searching source: msstore" "!winget_log!" >nul
     if !errorlevel! equ 0 (
         echo [INFO] Reintentando instalacion con --source winget...
-        "!install_cmd!" install --id "!package_id!" !install_args! --source winget --accept-package-agreements --accept-source-agreements > "!winget_log!" 2>&1
+        chcp 65001 >nul 2>&1
+        "!install_cmd!" install --id "!package_id!" !install_args! --source winget --accept-package-agreements --accept-source-agreements
         set "install_exit=!errorlevel!"
-        type "!winget_log!"
+        chcp !_oldcp! >nul 2>&1
     ) else (
         findstr /C:"cannot execute" /C:"no se puede ejecutar" /C:"no puede ejecutar" "!winget_log!" >nul 2>&1
         if !errorlevel! equ 0 (
             echo [INFO] Reintentando via PowerShell...
-            powershell -Command "winget install --id '!package_id!' !install_args! --accept-package-agreements --accept-source-agreements" > "!winget_log!" 2>&1
+            powershell -Command "winget install --id '!package_id!' !install_args! --accept-package-agreements --accept-source-agreements"
             set "install_exit=!errorlevel!"
-            type "!winget_log!"
         )
     )
 )
@@ -2250,6 +2259,8 @@ if exist "!winget_log!" del "!winget_log!"
 goto :winget_install_end
 
 :winget_install_end
+:: Restaurar code page original
+if defined _oldcp chcp !_oldcp! >nul 2>&1
 endlocal & exit /b %install_exit%
 
 :install_winget_update
